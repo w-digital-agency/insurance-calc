@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- Web App 標籤 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="W Digital Calc">
+    <meta name="apple-mobile-web-app-title" content="保險方案計算">
     
     <title>保險方案計算工具 | W Digital</title>
     
@@ -15,8 +14,8 @@
     
     <style>
         body { 
-            background-color: #f8fafc; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: #f1f5f9; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang HK", "Microsoft JhengHei", Helvetica, Arial, sans-serif; 
             min-height: 100vh; 
             display: flex; 
             flex-direction: column;
@@ -33,9 +32,8 @@
             font-size: 0.75rem; 
             color: #64748b; 
             margin-bottom: 6px; 
-            text-transform: uppercase; 
             font-weight: 800; 
-            letter-spacing: 0.05em;
+            letter-spacing: 0.02em;
         }
         .input-group input { 
             width: 100%; 
@@ -65,26 +63,78 @@
         .btn-del:hover { color: #e11d48; }
         .row-warning { background-color: #fff1f2 !important; color: #9f1239; }
         
-        canvas { max-height: 400px; width: 100% !important; }
+        .chart-canvas-tall { max-height: 400px; width: 100% !important; }
+        .chart-canvas-short { max-height: 260px; width: 100% !important; }
         
-        /* iPad Scrollbar */
+        .timeline-bar {
+            position: relative;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #e0e7ff, #c7d2fe);
+        }
+        .timeline-fill {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #6366f1, #4f46e5);
+        }
+        
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+        /* KPI cards: shrink on tablet, avoid grid min-width blowout (iPad) */
+        .stat-kpi-card { min-width: 0; }
+        .stat-kpi-value {
+            font-size: clamp(0.8125rem, 2.4vw + 0.35rem, 1.375rem);
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        .stat-kpi-value-lg {
+            font-size: clamp(1rem, 3vw + 0.25rem, 1.5rem);
+            line-height: 1.15;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .card { box-shadow: none; border: 1px solid #e2e8f0; break-inside: avoid; }
+            canvas { max-height: 320px !important; }
+        }
     </style>
 </head>
 <body class="p-4 md:p-10">
     <div class="max-w-7xl mx-auto main-content">
-        <!-- Header -->
+        <!-- Disclaimer -->
+        <aside class="mb-6 rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-xs text-amber-950 leading-relaxed">
+            <strong class="font-black">重要提示：</strong>本工具僅供港澳保險業界前線作銷售輔助及情景展示，數字為<b>非保證</b>簡化模型，不代表任何保險公司計劃書。正式建議以公司批核之利益說明文件及產品條款為準。
+        </aside>
+
         <header class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
                 <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-1">專業保險方案展示</h1>
-                <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded uppercase tracking-wider">W Digital Agency</span>
-                    <p class="text-slate-400 text-sm font-medium">Wealth Planning Interactive Tool</p>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded tracking-wider">W Digital Agency</span>
+                    <p class="text-slate-400 text-sm font-medium">財富規劃 · 視覺化銷售工具</p>
                 </div>
             </div>
-            <div>
-                <button onclick="resetToTemplate()" class="bg-white border border-slate-200 text-slate-600 px-6 py-3 rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2">
+            <div class="flex flex-wrap gap-3 no-print">
+                <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-3 py-2 shadow-sm">
+                    <span class="text-[10px] font-black text-slate-500">顯示</span>
+                    <button type="button" id="btnCurrUSD" onclick="setCurrency('USD')" class="px-3 py-1.5 rounded-xl text-xs font-black bg-slate-900 text-white">美金</button>
+                    <button type="button" id="btnCurrHKD" onclick="setCurrency('HKD')" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">港幣</button>
+                </div>
+                <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-3 py-1 shadow-sm">
+                    <label class="text-[10px] font-black text-slate-500 whitespace-nowrap">美金兌港幣</label>
+                    <input type="number" id="fxRate" value="7.8" step="0.01" min="1" class="w-20 text-sm font-mono font-bold border-none focus:ring-0 p-1" oninput="calculate()" title="參考匯率，可自調">
+                </div>
+                <button onclick="window.print()" class="bg-white border border-slate-200 text-slate-600 px-4 py-3 rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
+                    列印（可另存 PDF）
+                </button>
+                <button onclick="resetToTemplate()" class="bg-white border border-slate-200 text-slate-600 px-4 py-3 rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
@@ -94,9 +144,7 @@
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            <!-- Left Side: Config -->
             <div class="lg:col-span-4 space-y-8">
-                <!-- Params -->
                 <div class="card p-8">
                     <h2 class="text-xl font-black mb-6 flex items-center gap-3 text-slate-800">
                         <span class="w-2 h-6 bg-blue-600 rounded-full"></span> 基礎數據
@@ -111,11 +159,12 @@
                             <input type="number" id="payYears" value="5" oninput="calculate()">
                         </div>
                         <div class="input-group col-span-2">
-                            <label>每年保費 (USD)</label>
+                            <label>每年保費（美金）</label>
                             <input type="number" id="annualPremium" value="97143" oninput="calculate()">
                         </div>
                         <div class="input-group col-span-2">
-                            <label>預期回報率 (IRR)</label>
+                            <label>演示年化回報率（非保證）</label>
+                            <p class="text-[10px] text-slate-400 -mt-2 mb-2">可對照「保守／基準／樂觀」三情景作壓力測試</p>
                             <div class="flex items-center gap-5 py-2">
                                 <input type="range" id="irr" min="3" max="8" step="0.1" value="6" class="flex-grow h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-blue-600" oninput="updateIrrLabel(this.value)">
                                 <span id="irrValue" class="font-mono font-black text-blue-600 text-xl min-w-[60px]">6.0%</span>
@@ -124,78 +173,122 @@
                     </div>
                 </div>
 
-                <!-- Withdrawals -->
                 <div class="card p-8">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-black flex items-center gap-3 text-slate-800">
                             <span class="w-2 h-6 bg-emerald-500 rounded-full"></span> 提取策略
                         </h2>
-                        <button onclick="addWithdrawalRow()" class="btn-add">新增</button>
+                        <button onclick="addWithdrawalRow()" class="btn-add no-print">新增</button>
                     </div>
                     <div id="withdrawalContainer" class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                        <!-- Dynamic Rows -->
+                    </div>
+                </div>
+
+                <!-- Life-stage timeline (Gantt-style) -->
+                <div class="card p-8">
+                    <h2 class="text-lg font-black mb-4 text-slate-800 flex items-center gap-2">
+                        <span class="w-2 h-5 bg-violet-500 rounded-full"></span> 人生階段 · 提取時間軸
+                    </h2>
+                    <p class="text-[10px] text-slate-400 mb-4 font-medium">參考國際顧問常用的「里程碑圖示」，向客戶同步教育、置業、退休等資金需要。</p>
+                    <div id="lifeStageTimeline" class="space-y-4">
                     </div>
                 </div>
             </div>
 
-            <!-- Right Side: Analytics -->
             <div class="lg:col-span-8 space-y-10">
-                <!-- Summary -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    <div class="card p-6 bg-white">
-                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-2">總保費支出</p>
-                        <p class="text-2xl font-black text-slate-800" id="statTotalPaid">$0</p>
+                <!-- Scenario stress test (inspired by illustration comparison tools) -->
+                <div class="card p-6 bg-slate-900 text-white border-slate-800">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                        <div>
+                            <h3 class="text-sm font-black tracking-widest text-blue-300">回報率三情景 · 壓力測試</h3>
+                            <p class="text-[11px] text-slate-400 mt-1">同一繳費與提取，對比不同非保證回報假設（常見於顧問端多情景說明）。</p>
+                        </div>
                     </div>
-                    <div class="card p-6 border-b-8 border-emerald-500 bg-white">
-                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-2">累計提取金額</p>
-                        <p class="text-2xl font-black text-emerald-600" id="statTotalWithdraw">$0</p>
-                    </div>
-                    <div class="card p-6 bg-white">
-                        <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-2">100歲剩餘價值</p>
-                        <p class="text-2xl font-black text-slate-800" id="statFinalValue">$0</p>
-                    </div>
-                    <div class="card p-6 bg-slate-900 text-white shadow-xl shadow-slate-200">
-                        <p class="text-[10px] opacity-60 uppercase font-black tracking-widest mb-2">預計回報倍數</p>
-                        <p class="text-4xl font-black text-blue-400" id="statMultiple">0.0x</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="scenarioStrip">
                     </div>
                 </div>
 
-                <!-- Chart -->
+                <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+                    <div class="card stat-kpi-card p-4 sm:p-5 bg-white">
+                        <p class="text-[10px] text-slate-400 font-black tracking-widest mb-1 leading-snug">總保費支出</p>
+                        <p class="stat-kpi-value font-black text-slate-800" id="statTotalPaid">美金0元</p>
+                    </div>
+                    <div class="card stat-kpi-card p-4 sm:p-5 border-b-4 border-emerald-500 bg-white">
+                        <p class="text-[10px] text-slate-400 font-black tracking-widest mb-1 leading-snug">累計提取</p>
+                        <p class="stat-kpi-value font-black text-emerald-600" id="statTotalWithdraw">美金0元</p>
+                    </div>
+                    <div class="card stat-kpi-card p-4 sm:p-5 bg-white">
+                        <p class="text-[10px] text-slate-400 font-black tracking-widest mb-1 leading-snug">100歲帳戶價值</p>
+                        <p class="stat-kpi-value font-black text-slate-800" id="statFinalValue">美金0元</p>
+                    </div>
+                    <div class="card stat-kpi-card p-4 sm:p-5 bg-slate-900 text-white">
+                        <p class="text-[10px] opacity-60 font-black tracking-widest mb-1 leading-snug">預計回報倍數</p>
+                        <p class="stat-kpi-value-lg font-black text-blue-400" id="statMultiple">0.00倍</p>
+                    </div>
+                    <div class="card stat-kpi-card p-4 sm:p-5 bg-white col-span-2 md:col-span-1 xl:col-span-1">
+                        <p class="text-[10px] text-slate-400 font-black tracking-widest mb-1 leading-snug">現金價值回本點</p>
+                        <p class="stat-kpi-value font-black text-violet-600" id="statBreakeven">—</p>
+                        <p class="text-[9px] text-slate-400 mt-1 leading-snug hyphens-none">首次帳戶價值 ≥ 已繳總保費之年齡</p>
+                    </div>
+                    <div class="card stat-kpi-card p-4 sm:p-5 bg-white col-span-2 md:col-span-1 xl:col-span-1">
+                        <p class="text-[10px] text-slate-400 font-black tracking-widest mb-1 leading-snug">淨財富增值（演示）</p>
+                        <p class="stat-kpi-value font-black text-amber-600" id="statNetWealth">美金0元</p>
+                        <p class="text-[9px] text-slate-400 mt-1 leading-snug">提取 + 期末價值 − 總保費</p>
+                    </div>
+                </div>
+
                 <div class="card p-8">
-                    <div class="flex justify-between items-end mb-8">
+                    <div class="flex justify-between items-end mb-8 flex-wrap gap-4">
                         <div>
-                            <h3 class="text-lg font-black text-slate-800">資產預測分析</h3>
-                            <p class="text-xs text-slate-400 font-medium">Asset Growth & Cashflow Projection</p>
+                            <h3 class="text-lg font-black text-slate-800">資產與現金流預測</h3>
+                            <p class="text-xs text-slate-400 font-medium">帳戶結餘、年度提取、累計已繳保費（階梯線）</p>
                         </div>
-                        <div class="flex gap-6 text-[10px] font-bold uppercase tracking-widest">
+                        <div class="flex gap-4 text-[10px] font-bold tracking-widest flex-wrap">
                             <span class="flex items-center gap-2 text-blue-600"><span class="w-3 h-3 bg-blue-600 rounded-full"></span> 帳戶餘額</span>
                             <span class="flex items-center gap-2 text-rose-500"><span class="w-3 h-3 bg-rose-500 rounded-full"></span> 年度提取</span>
+                            <span class="flex items-center gap-2 text-slate-500"><span class="w-3 h-3 bg-slate-400 rounded-full"></span> 累計保費</span>
                         </div>
                     </div>
                     <div class="relative h-[400px]">
-                        <canvas id="mainChart"></canvas>
+                        <canvas id="mainChart" class="chart-canvas-tall"></canvas>
                     </div>
                 </div>
 
-                <!-- Table -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="card p-8">
+                        <h3 class="text-lg font-black text-slate-800 mb-2">100歲時 · 資金結構</h3>
+                        <p class="text-xs text-slate-400 mb-6">已提取累計與期末剩餘（助客戶理解「用錢」與「留在保單」比例）</p>
+                        <div class="relative h-[260px]">
+                            <canvas id="donutChart" class="chart-canvas-short"></canvas>
+                        </div>
+                    </div>
+                    <div class="card p-8">
+                        <h3 class="text-lg font-black text-slate-800 mb-2">回報率敏感度 · 帳戶餘額</h3>
+                        <p class="text-xs text-slate-400 mb-6">三條曲線同期比較（與多國顧問軟件「多情景疊加」概念一致）</p>
+                        <div class="relative h-[260px]">
+                            <canvas id="sensitivityChart" class="chart-canvas-short"></canvas>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card overflow-hidden">
-                    <div class="bg-slate-50/80 px-8 py-5 border-b border-slate-100 flex justify-between items-center">
-                        <span class="text-sm font-black text-slate-700 tracking-wide uppercase">關鍵年份報告</span>
-                        <span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold text-slate-400 border border-slate-200 shadow-sm">自動篩選關鍵節點</span>
+                    <div class="bg-slate-50/80 px-8 py-5 border-b border-slate-100 flex justify-between items-center flex-wrap gap-2">
+                        <span class="text-sm font-black text-slate-700 tracking-wide">關鍵年份報告</span>
+                        <span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold text-slate-400 border border-slate-200 shadow-sm">供款期／提取期／10年節點／100歲</span>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left">
                             <thead>
                                 <tr class="text-slate-400 border-b bg-white">
-                                    <th class="px-8 py-5 font-bold uppercase tracking-tighter">年度</th>
-                                    <th class="px-8 py-5 font-bold uppercase tracking-tighter">年齡</th>
-                                    <th class="px-8 py-5 font-bold uppercase tracking-tighter">年度投入</th>
-                                    <th class="px-8 py-5 font-bold uppercase tracking-tighter text-rose-500">年度提取</th>
-                                    <th class="px-8 py-5 font-bold uppercase tracking-tighter text-right text-slate-900">現金價值</th>
+                                    <th class="px-6 py-4 font-bold tracking-tighter">年度</th>
+                                    <th class="px-6 py-4 font-bold tracking-tighter">年齡</th>
+                                    <th class="px-6 py-4 font-bold tracking-tighter">年度投入</th>
+                                    <th class="px-6 py-4 font-bold tracking-tighter text-rose-500">年度提取</th>
+                                    <th class="px-6 py-4 font-bold tracking-tighter text-right text-slate-600">累計保費</th>
+                                    <th class="px-6 py-4 font-bold tracking-tighter text-right text-slate-900">現金價值</th>
                                 </tr>
                             </thead>
                             <tbody id="resultTableBody" class="bg-white">
-                                <!-- Data injected here -->
                             </tbody>
                         </table>
                     </div>
@@ -204,24 +297,47 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="mt-20 py-12 border-t border-slate-100 text-center bg-white">
-        <p class="text-slate-400 text-xs font-bold tracking-widest uppercase mb-2">
-            Professional Insurance Solution Provided By
+    <footer class="mt-20 py-12 border-t border-slate-200 text-center bg-white/80">
+        <p class="text-slate-400 text-xs font-bold tracking-widest mb-2">
+            專業保險方案由以下機構提供
         </p>
         <a href="https://www.wdigitalagency.com" target="_blank" class="text-blue-600 text-lg font-black hover:text-blue-700 transition-all tracking-tight">
             W Digital Agency
         </a>
-        <p class="mt-4 text-slate-300 text-[10px]">© 2024 ALL RIGHTS RESERVED.</p>
+        <p class="mt-4 text-slate-400 text-[10px] max-w-2xl mx-auto leading-relaxed px-4">
+            本頁面非任何保險公司官方建議書工具。向客戶演示前，請遵循公司合規要求並說明非保證元素。
+        </p>
+        <p class="mt-2 text-slate-300 text-[10px]">© 2026 版權所有</p>
     </footer>
 
     <script>
-        let chart;
+        let chart, chartDonut, chartSens;
+        let displayCurrency = 'USD';
         let withdrawals = [
             { startAge: 18, endAge: 21, amount: 200000, label: '海外升學基金' },
-            { startAge: 30, endAge: 30, amount: 200000, label: '首期/創業基金' },
+            { startAge: 30, endAge: 30, amount: 200000, label: '首期、創業基金' },
             { startAge: 65, endAge: 88, amount: 120000, label: '退休長糧計劃' }
         ];
+
+        function getFx() {
+            return parseFloat(document.getElementById('fxRate').value) || 7.8;
+        }
+
+        function usdToDisplay(usd) {
+            if (displayCurrency === 'HKD') return usd * getFx();
+            return usd;
+        }
+
+        function setCurrency(c) {
+            displayCurrency = c;
+            document.getElementById('btnCurrUSD').className = c === 'USD'
+                ? 'px-3 py-1.5 rounded-xl text-xs font-black bg-slate-900 text-white'
+                : 'px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100';
+            document.getElementById('btnCurrHKD').className = c === 'HKD'
+                ? 'px-3 py-1.5 rounded-xl text-xs font-black bg-slate-900 text-white'
+                : 'px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100';
+            calculate();
+        }
 
         function updateIrrLabel(val) {
             document.getElementById('irrValue').innerText = parseFloat(val).toFixed(1) + '%';
@@ -248,7 +364,7 @@
         function resetToTemplate() {
             withdrawals = [
                 { startAge: 18, endAge: 21, amount: 200000, label: '海外升學基金' },
-                { startAge: 30, endAge: 30, amount: 200000, label: '首期/創業基金' },
+                { startAge: 30, endAge: 30, amount: 200000, label: '首期、創業基金' },
                 { startAge: 65, endAge: 88, amount: 120000, label: '退休長糧計劃' }
             ];
             document.getElementById('entryAge').value = 0;
@@ -256,6 +372,8 @@
             document.getElementById('payYears').value = 5;
             document.getElementById('irr').value = 6;
             document.getElementById('irrValue').innerText = '6.0%';
+            document.getElementById('fxRate').value = 7.8;
+            setCurrency('USD');
             renderWithdrawalInputs();
             calculate();
         }
@@ -264,23 +382,23 @@
             const container = document.getElementById('withdrawalContainer');
             container.innerHTML = withdrawals.map((w, i) => `
                 <div class="p-5 border border-slate-100 rounded-3xl bg-slate-50/30 space-y-4 relative group transition-all hover:bg-white hover:shadow-xl hover:border-blue-100">
-                    <button onclick="removeWithdrawalRow(${i})" class="btn-del absolute top-2 right-4 opacity-10 group-hover:opacity-100 transition-opacity">×</button>
-                    <input type="text" value="${w.label}" placeholder="項目描述" 
+                    <button type="button" onclick="removeWithdrawalRow(${i})" class="btn-del absolute top-2 right-4 opacity-10 group-hover:opacity-100 transition-opacity no-print">×</button>
+                    <input type="text" value="${w.label.replace(/"/g, '&quot;')}" placeholder="項目描述" 
                            class="bg-transparent border-none font-black text-slate-800 w-full focus:ring-0 p-0 text-sm"
                            onchange="updateWithdrawalData(${i}, 'label', this.value)">
                     <div class="grid grid-cols-3 gap-4">
                         <div>
-                            <label class="text-[8px] text-slate-400 font-black uppercase">由年齡</label>
+                            <label class="text-[8px] text-slate-400 font-black">由年齡</label>
                             <input type="number" value="${w.startAge}" class="w-full text-xs p-2.5 rounded-xl border-slate-200 border bg-white/50" 
                                    oninput="updateWithdrawalData(${i}, 'startAge', this.value)">
                         </div>
                         <div>
-                            <label class="text-[8px] text-slate-400 font-black uppercase">至年齡</label>
+                            <label class="text-[8px] text-slate-400 font-black">至年齡</label>
                             <input type="number" value="${w.endAge}" class="w-full text-xs p-2.5 rounded-xl border-slate-200 border bg-white/50" 
                                    oninput="updateWithdrawalData(${i}, 'endAge', this.value)">
                         </div>
                         <div>
-                            <label class="text-[8px] text-slate-400 font-black uppercase text-blue-600">每年金額</label>
+                            <label class="text-[8px] text-slate-400 font-black text-blue-600">每年金額（美金）</label>
                             <input type="number" value="${w.amount}" class="w-full text-xs p-2.5 rounded-xl border-blue-200 border bg-blue-50/30 text-blue-700 font-black" 
                                    oninput="updateWithdrawalData(${i}, 'amount', this.value)">
                         </div>
@@ -289,39 +407,58 @@
             `).join('');
         }
 
-        function formatCurrency(val) {
-            if (val >= 1000000) return '$' + (val / 1000000).toFixed(2) + 'M';
-            if (val >= 10000) return '$' + (val / 10000).toFixed(1) + '萬';
-            return '$' + Math.round(val).toLocaleString();
+        /** 顯示用：港幣／美金 + 億／千萬／萬／百萬／千／元（不用 M、K、HK$ 等） */
+        function formatCurrencyUsd(usdVal) {
+            const v = usdToDisplay(usdVal);
+            const p = displayCurrency === 'HKD' ? '港幣' : '美金';
+            if (displayCurrency === 'HKD') {
+                if (v >= 100000000) return p + (v / 100000000).toFixed(2) + '億';
+                if (v >= 10000000) return p + (v / 10000000).toFixed(2) + '千萬';
+                if (v >= 10000) return p + (v / 10000).toFixed(1) + '萬';
+                if (v >= 1000) return p + (v / 1000).toFixed(1) + '千';
+                return p + Math.round(v).toLocaleString() + '元';
+            }
+            if (v >= 100000000) return p + (v / 100000000).toFixed(2) + '億';
+            if (v >= 10000000) return p + (v / 10000000).toFixed(2) + '千萬';
+            if (v >= 1000000) return p + (v / 1000000).toFixed(2) + '百萬';
+            if (v >= 10000) return p + (v / 10000).toFixed(1) + '萬';
+            if (v >= 1000) return p + (v / 1000).toFixed(1) + '千';
+            return p + Math.round(v).toLocaleString() + '元';
         }
 
-        function calculate() {
+        function chartAxisPrefix() {
+            return displayCurrency === 'HKD' ? '港幣' : '美金';
+        }
+
+        /** Core projection engine — reusable for scenario / sensitivity */
+        function simulate(irrFraction) {
             const entryAge = parseInt(document.getElementById('entryAge').value) || 0;
             const annualPremium = parseFloat(document.getElementById('annualPremium').value) || 0;
             const payYears = parseInt(document.getElementById('payYears').value) || 0;
-            const irr = (parseFloat(document.getElementById('irr').value) || 0) / 100;
 
             const totalPaid = annualPremium * payYears;
             let cashValue = 0;
             let totalWithdraw = 0;
-            
+            let cumulativePremium = 0;
+
             const labels = [];
             const dataCashValue = [];
             const dataWithdrawals = [];
+            const dataCumulativePremium = [];
             const tableRows = [];
+            let breakEvenAge = null;
 
             for (let t = 1; t <= (100 - entryAge + 1); t++) {
                 const age = entryAge + t - 1;
-                let deposit = t <= payYears ? annualPremium : 0;
+                const deposit = t <= payYears ? annualPremium : 0;
                 let withdrawal = 0;
 
                 withdrawals.forEach(w => {
-                    if (age >= w.startAge && age <= w.endAge) {
-                        withdrawal += w.amount;
-                    }
+                    if (age >= w.startAge && age <= w.endAge) withdrawal += w.amount;
                 });
 
-                cashValue = (cashValue + deposit) * (1 + irr) - withdrawal;
+                cumulativePremium += deposit;
+                cashValue = (cashValue + deposit) * (1 + irrFraction) - withdrawal;
                 if (cashValue < 0) cashValue = 0;
 
                 totalWithdraw += withdrawal;
@@ -329,32 +466,191 @@
                 labels.push(age);
                 dataCashValue.push(Math.round(cashValue));
                 dataWithdrawals.push(Math.round(withdrawal));
+                dataCumulativePremium.push(Math.round(cumulativePremium));
+
+                if (breakEvenAge === null && cumulativePremium > 0 && cashValue >= totalPaid) {
+                    breakEvenAge = age;
+                }
 
                 if (t <= payYears || withdrawal > 0 || age % 10 === 0 || age === 100) {
-                    tableRows.push(`
-                        <tr class="border-b transition-colors ${cashValue <= 0 && withdrawal > 0 ? 'row-warning' : 'hover:bg-slate-50'}">
-                            <td class="px-8 py-5 text-slate-400 font-bold">${t}</td>
-                            <td class="px-8 py-5 font-black text-slate-700">${age}</td>
-                            <td class="px-8 py-5 text-blue-600 font-bold">${deposit > 0 ? formatCurrency(deposit) : '-'}</td>
-                            <td class="px-8 py-5 text-rose-500 font-black">${withdrawal > 0 ? formatCurrency(withdrawal) : '-'}</td>
-                            <td class="px-8 py-5 text-right font-mono font-black text-slate-900">${formatCurrency(cashValue)}</td>
-                        </tr>
-                    `);
+                    tableRows.push({
+                        t, age, deposit, withdrawal, cumulativePremium, cashValue,
+                        warn: cashValue <= 0 && withdrawal > 0
+                    });
                 }
                 if (age >= 100) break;
             }
 
-            document.getElementById('statTotalPaid').innerText = formatCurrency(totalPaid);
-            document.getElementById('statTotalWithdraw').innerText = formatCurrency(totalWithdraw);
-            document.getElementById('statFinalValue').innerText = formatCurrency(cashValue);
             const multiple = (totalWithdraw + cashValue) / (totalPaid || 1);
-            document.getElementById('statMultiple').innerText = multiple.toFixed(2) + 'x';
+            const netWealth = totalWithdraw + cashValue - totalPaid;
 
-            document.getElementById('resultTableBody').innerHTML = tableRows.join('');
-            updateChart(labels, dataCashValue, dataWithdrawals);
+            return {
+                entryAge, totalPaid, totalWithdraw, finalValue: cashValue, multiple, netWealth,
+                breakEvenAge, labels, dataCashValue, dataWithdrawals, dataCumulativePremium, tableRows
+            };
         }
 
-        function updateChart(labels, cashValues, withdrawals) {
+        function renderScenarioStrip(baseIrr) {
+            const wrap = document.getElementById('scenarioStrip');
+            const deltas = [
+                { key: 'low', label: '保守', sub: '基準 −1.5%', d: -0.015 },
+                { key: 'mid', label: '基準', sub: '目前滑杆', d: 0 },
+                { key: 'high', label: '樂觀', sub: '基準 +1.5%', d: 0.015 }
+            ];
+            const irrBase = baseIrr;
+            wrap.innerHTML = deltas.map((s, idx) => {
+                const r = Math.max(0.01, Math.min(0.12, irrBase + s.d));
+                const out = simulate(r);
+                const border = idx === 1 ? 'ring-2 ring-blue-400' : 'border border-slate-700';
+                return `
+                <div class="rounded-2xl bg-slate-800/80 p-4 min-w-0 ${border}">
+                    <p class="text-[10px] font-black text-slate-500">${s.label}</p>
+                    <p class="text-xs text-slate-400 mb-2 break-words">${s.sub} · 年化 ${(r * 100).toFixed(1)}%</p>
+                    <p class="stat-kpi-value font-black text-white">${formatCurrencyUsd(out.finalValue)}</p>
+                    <p class="text-[10px] text-slate-400 mt-1">100歲帳戶</p>
+                    <p class="stat-kpi-value font-black text-blue-300 mt-2">${out.multiple.toFixed(2)}倍</p>
+                </div>`;
+            }).join('');
+        }
+
+        function renderLifeTimeline(entryAge) {
+            const el = document.getElementById('lifeStageTimeline');
+            const endAge = 100;
+            const span = Math.max(1, endAge - entryAge);
+            el.innerHTML = withdrawals.map((w, i) => {
+                const left = Math.max(0, ((w.startAge - entryAge) / span) * 100);
+                const right = Math.min(100, ((w.endAge + 1 - entryAge) / span) * 100);
+                const width = Math.max(2, right - left);
+                const totalYears = Math.max(0, w.endAge - w.startAge + 1);
+                const phaseTotal = totalYears * w.amount;
+                return `
+                <div>
+                    <div class="flex justify-between items-baseline gap-2 mb-1">
+                        <span class="text-xs font-black text-slate-700">${w.label}</span>
+                        <span class="text-[10px] font-bold text-slate-400">${w.startAge}–${w.endAge} 歲 · ${formatCurrencyUsd(w.amount)}/年</span>
+                    </div>
+                    <div class="timeline-bar">
+                        <div class="timeline-fill" style="left:${left}%; width:${width}%"></div>
+                    </div>
+                    <p class="text-[9px] text-slate-400 mt-1">此階段演示提取約 <b class="text-violet-600">${formatCurrencyUsd(phaseTotal)}</b>（累計）</p>
+                </div>`;
+            }).join('') || '<p class="text-xs text-slate-400">可新增提取策略以顯示時間軸。</p>';
+        }
+
+        function updateDonut(totalWithdraw, finalValue) {
+            const ctx = document.getElementById('donutChart').getContext('2d');
+            if (chartDonut) chartDonut.destroy();
+            const tw = usdToDisplay(totalWithdraw);
+            const fv = usdToDisplay(finalValue);
+            chartDonut = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['累計已提取', '100歲剩餘價值'],
+                    datasets: [{
+                        data: [Math.max(0, tw), Math.max(0, fv)],
+                        backgroundColor: ['#f43f5e', '#2563eb'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { weight: '700' }, boxWidth: 12 } },
+                        tooltip: {
+                            callbacks: {
+                                label: (c) => {
+                                    const raw = c.parsed;
+                                    const usdRaw = displayCurrency === 'HKD' ? raw / getFx() : raw;
+                                    const main = c.label + ': ' + (displayCurrency === 'HKD' ? '港幣' : '美金') + Math.round(raw).toLocaleString() + '元';
+                                    const extra = displayCurrency === 'HKD'
+                                        ? `（約${Math.round(usdRaw).toLocaleString()}美金）`
+                                        : '';
+                                    return main + extra;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateSensitivityChart(baseIrrFraction) {
+            const ctx = document.getElementById('sensitivityChart').getContext('2d');
+            if (chartSens) chartSens.destroy();
+            const variants = [
+                { r: Math.max(0.01, baseIrrFraction - 0.015), color: '#94a3b8', label: '保守' },
+                { r: baseIrrFraction, color: '#2563eb', label: '基準' },
+                { r: Math.min(0.12, baseIrrFraction + 0.015), color: '#10b981', label: '樂觀' }
+            ];
+            const first = simulate(variants[0].r);
+            const datasets = variants.map(v => {
+                const s = simulate(v.r);
+                return {
+                    label: `${v.label} (${(v.r * 100).toFixed(1)}%)`,
+                    data: s.dataCashValue.map(x => usdToDisplay(x)),
+                    borderColor: v.color,
+                    borderWidth: v.r === baseIrrFraction ? 3 : 2,
+                    tension: 0.35,
+                    pointRadius: 0,
+                    fill: false
+                };
+            });
+            chartSens = new Chart(ctx, {
+                type: 'line',
+                data: { labels: first.labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { display: false }, ticks: { maxTicksLimit: 12, color: '#94a3b8' } },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: v => chartAxisPrefix() + (v / 10000) + '萬'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10, weight: '700' } } }
+                    }
+                }
+            });
+        }
+
+        function calculate() {
+            const irr = (parseFloat(document.getElementById('irr').value) || 0) / 100;
+            const out = simulate(irr);
+
+            document.getElementById('statTotalPaid').innerText = formatCurrencyUsd(out.totalPaid);
+            document.getElementById('statTotalWithdraw').innerText = formatCurrencyUsd(out.totalWithdraw);
+            document.getElementById('statFinalValue').innerText = formatCurrencyUsd(out.finalValue);
+            document.getElementById('statMultiple').innerText = out.multiple.toFixed(2) + '倍';
+            document.getElementById('statBreakeven').innerText = out.breakEvenAge != null ? `${out.breakEvenAge} 歲` : '演示內未達標';
+            document.getElementById('statNetWealth').innerText = formatCurrencyUsd(out.netWealth);
+
+            const tbody = document.getElementById('resultTableBody');
+            tbody.innerHTML = out.tableRows.map(row => `
+                <tr class="border-b transition-colors ${row.warn ? 'row-warning' : 'hover:bg-slate-50'}">
+                    <td class="px-6 py-4 text-slate-400 font-bold">${row.t}</td>
+                    <td class="px-6 py-4 font-black text-slate-700">${row.age}</td>
+                    <td class="px-6 py-4 text-blue-600 font-bold">${row.deposit > 0 ? formatCurrencyUsd(row.deposit) : '-'}</td>
+                    <td class="px-6 py-4 text-rose-500 font-black">${row.withdrawal > 0 ? formatCurrencyUsd(row.withdrawal) : '-'}</td>
+                    <td class="px-6 py-4 text-right font-mono text-slate-600 font-bold">${formatCurrencyUsd(row.cumulativePremium)}</td>
+                    <td class="px-6 py-4 text-right font-mono font-black text-slate-900">${formatCurrencyUsd(row.cashValue)}</td>
+                </tr>
+            `).join('');
+
+            updateMainChart(out.labels, out.dataCashValue, out.dataWithdrawals, out.dataCumulativePremium);
+            updateDonut(out.totalWithdraw, out.finalValue);
+            updateSensitivityChart(irr);
+            renderScenarioStrip(irr);
+            renderLifeTimeline(out.entryAge);
+        }
+
+        function updateMainChart(labels, cashValues, withdrawalsArr, cumulativePremium) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if (chart) chart.destroy();
 
@@ -362,32 +658,47 @@
             gradient.addColorStop(0, 'rgba(37, 99, 235, 0.2)');
             gradient.addColorStop(1, 'rgba(37, 99, 235, 0)');
 
+            const cv = cashValues.map(v => usdToDisplay(v));
+            const wd = withdrawalsArr.map(v => usdToDisplay(v));
+            const cp = cumulativePremium.map(v => usdToDisplay(v));
+
             chart = new Chart(ctx, {
-                type: 'line',
                 data: {
-                    labels: labels,
+                    labels,
                     datasets: [
                         {
-                            label: '年度提取',
-                            data: withdrawals,
-                            backgroundColor: '#f43f5e',
                             type: 'bar',
-                            barThickness: 8,
+                            label: '年度提取',
+                            data: wd,
+                            backgroundColor: '#f43f5e',
+                            barThickness: 7,
                             borderRadius: 4,
-                            order: 2
+                            order: 3
                         },
                         {
+                            type: 'line',
                             label: '帳戶價值',
-                            data: cashValues,
+                            data: cv,
                             borderColor: '#2563eb',
-                            borderWidth: 4,
+                            borderWidth: 3,
                             backgroundColor: gradient,
                             fill: true,
                             tension: 0.4,
                             pointRadius: 0,
                             pointHoverRadius: 6,
-                            pointBackgroundColor: '#2563eb',
                             order: 1
+                        },
+                        {
+                            type: 'line',
+                            label: '累計已繳保費',
+                            data: cp,
+                            borderColor: '#64748b',
+                            borderWidth: 2,
+                            borderDash: [6, 4],
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 0,
+                            order: 2
                         }
                     ]
                 },
@@ -395,15 +706,15 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: { 
+                        x: {
                             grid: { display: false },
-                            ticks: { font: { weight: 'bold' }, color: '#94a3b8', padding: 10 }
+                            ticks: { font: { weight: 'bold' }, color: '#94a3b8', padding: 10, maxTicksLimit: 18 }
                         },
-                        y: { 
+                        y: {
                             beginAtZero: true,
                             grid: { color: '#f1f5f9', borderDash: [5, 5] },
-                            ticks: { 
-                                callback: v => '$' + (v / 10000) + '萬',
+                            ticks: {
+                                callback: v => chartAxisPrefix() + (v / 10000) + '萬',
                                 color: '#94a3b8',
                                 padding: 10
                             }
@@ -411,14 +722,14 @@
                     },
                     plugins: {
                         legend: { display: false },
-                        tooltip: { 
-                            mode: 'index', 
+                        tooltip: {
+                            mode: 'index',
                             intersect: false,
-                            padding: 20,
+                            padding: 16,
                             backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                            titleFont: { size: 16, weight: '900' },
-                            bodyFont: { size: 14, weight: 'bold' },
-                            cornerRadius: 16,
+                            titleFont: { size: 14, weight: '900' },
+                            bodyFont: { size: 13, weight: 'bold' },
+                            cornerRadius: 14,
                             displayColors: true
                         }
                     }
