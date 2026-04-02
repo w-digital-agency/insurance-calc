@@ -1,5 +1,5 @@
 /* 離線後備：文件優先走網絡以免舊版快取；其餘先快取（僅 manifest 等） */
-const CACHE = 'ins-calc-v2';
+const CACHE = 'ins-calc-v3';
 
 function assetUrl(path) {
   return new URL(path, self.location).href;
@@ -9,7 +9,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
-      cache.addAll([assetUrl('index.html'), assetUrl('manifest.json')]).catch(() => {})
+      cache.addAll([assetUrl('index.html'), assetUrl('feedback.html'), assetUrl('manifest.json')]).catch(() => {})
     )
   );
 });

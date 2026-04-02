@@ -3,13 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- OG／canonical 目前指向 GitHub Pages；若改用自訂網域請一併更新下方絕對網址。 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="保險方案計算">
     <meta name="theme-color" content="#2563eb">
     <link rel="manifest" href="manifest.json">
-    
-    <title>保險方案計算工具 | W Digital</title>
+
+    <title>保險方案計算工具｜專業保險方案展示 · W Digital Agency</title>
+    <meta name="description" content="港澳保險前線專用之情景演示工具：視覺化保費與提取、帳戶價值走勢、回報率三情景壓力測試及合規提示。數字為非保證模型，以公司正式說明文件為準。">
+    <meta name="keywords" content="保險方案,財富規劃,情景演示,壓力測試,香港保險,視覺化工具,W Digital,保險顧問">
+    <meta name="author" content="W Digital Agency">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <link rel="canonical" href="https://w-digital-agency.github.io/insurance-calc/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="W Digital Agency">
+    <meta property="og:locale" content="zh_HK">
+    <meta property="og:locale:alternate" content="en_HK">
+    <meta property="og:url" content="https://w-digital-agency.github.io/insurance-calc/">
+    <meta property="og:title" content="保險方案計算工具｜專業保險方案展示 · W Digital Agency">
+    <meta property="og:description" content="港澳保險業界前線適用之非保證情景展示：資產與現金流圖表、多情景回報對照、人生階段提取時間軸與合規聲明。由 W Digital Agency 提供，供內部培訓與客戶教育討論。">
+    <meta property="og:image" content="https://w-digital-agency.github.io/insurance-calc/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="保險方案計算工具 — W Digital Agency 視覺化銷售輔助">
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="保險方案計算工具｜專業保險方案展示 · W Digital Agency">
+    <meta name="twitter:description" content="港澳保險前線情景演示：圖表化保費、提取與帳戶價值，附三情景壓力測試與合規提示。非保證模型。">
+    <meta name="twitter:image" content="https://w-digital-agency.github.io/insurance-calc/og-image.png">
+    <meta name="twitter:image:alt" content="保險方案計算工具 — W Digital Agency">
+
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"WebApplication","name":"保險方案計算工具","alternateName":"專業保險方案展示","url":"https://w-digital-agency.github.io/insurance-calc/","description":"港澳保險業界前線適用之非保證情景展示與視覺化銷售輔助工具。","inLanguage":"zh-HK","applicationCategory":"FinanceApplication","operatingSystem":"Any","browserRequirements":"需要具 JavaScript 之現代瀏覽器","publisher":{"@type":"Organization","name":"W Digital Agency","url":"https://www.wdigitalagency.com"}}
+    </script>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -163,6 +193,9 @@
                 </div>
             </div>
             <div class="flex flex-wrap gap-3 no-print">
+                <a href="feedback.html" class="inline-flex items-center bg-white border border-slate-200 text-slate-700 px-4 py-3 rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-50 hover:border-blue-200 transition-all">
+                    同業意見與功能建議
+                </a>
                 <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-3 py-2 shadow-sm">
                     <span class="text-[10px] font-black text-slate-500">顯示</span>
                     <button type="button" id="btnCurrUSD" onclick="setCurrency('USD')" class="px-3 py-1.5 rounded-xl text-xs font-black bg-slate-900 text-white">美金</button>
@@ -473,7 +506,8 @@
             本頁面非任何保險公司官方建議書工具。向客戶演示前，請遵循公司合規要求並說明非保證元素。可加入主畫面以便離線開啟（視裝置及瀏覽器而定）。
         </p>
         <p class="mt-3 text-[10px] text-slate-500">
-            諮詢與合作：請使用頁面「<button type="button" onclick="openContactPanel()" class="text-blue-600 font-bold hover:underline bg-transparent border-none cursor-pointer p-0">聯絡我們</button>」表單。
+            <a href="feedback.html" class="text-blue-600 font-bold hover:underline">同業意見與功能建議</a>
+            ・ 諮詢與合作請使用「<button type="button" onclick="openContactPanel()" class="text-blue-600 font-bold hover:underline bg-transparent border-none cursor-pointer p-0">聯絡我們</button>」表單。
         </p>
         <p class="mt-2 text-slate-300 text-[10px]">© 2026 版權所有</p>
     </footer>

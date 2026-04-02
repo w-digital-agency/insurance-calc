@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2563eb">
+    <title>同業意見與功能建議｜保險方案計算工具 · W Digital Agency</title>
+    <meta name="description" content="香港及澳門保險同業可在此提出新功能構想、使用體驗與意見，協助我們優化專業保險方案展示工具。">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://w-digital-agency.github.io/insurance-calc/feedback.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="W Digital Agency">
+    <meta property="og:locale" content="zh_HK">
+    <meta property="og:url" content="https://w-digital-agency.github.io/insurance-calc/feedback.html">
+    <meta property="og:title" content="同業意見與功能建議｜保險方案計算工具">
+    <meta property="og:description" content="港澳保險前線：提交功能建議與使用意見，共同改進視覺化情景演示工具。">
+    <meta property="og:image" content="https://w-digital-agency.github.io/insurance-calc/og-image.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f1f5f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang HK", "Microsoft JhengHei", Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content { flex: 1; }
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(226, 232, 240, 0.6);
+        }
+        #agent-feedback-form input[type="text"],
+        #agent-feedback-form input[type="email"],
+        #agent-feedback-form input[type="tel"],
+        #agent-feedback-form select,
+        #agent-feedback-form textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.9375rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background-color: #fff;
+        }
+        #agent-feedback-form input:focus,
+        #agent-feedback-form select:focus,
+        #agent-feedback-form textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        #agent-feedback-form textarea { min-height: 10rem; resize: vertical; }
+        .roadmap-pill { font-size: 0.7rem; font-weight: 900; letter-spacing: 0.06em; color: #64748b; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-3xl mx-auto main-content w-full">
+        <header class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <a href="index.html" class="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 mb-3">
+                    <span aria-hidden="true">←</span> 返回計算工具
+                </a>
+                <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">同業意見與功能建議</h1>
+                <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded tracking-wider">W Digital Agency</span>
+                    <p class="text-slate-400 text-sm font-medium">給香港及澳門保險前線</p>
+                </div>
+            </div>
+        </header>
+
+        <aside class="mb-8 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-xs text-slate-600 leading-relaxed">
+            本頁用於收集<strong>工具本身</strong>的建議與感想，並非投保或理財諮詢渠道。請勿提交<strong>客戶個人資料</strong>或保單號碼等敏感內容。
+        </aside>
+
+        <!-- 功能路線圖（可自行在 HTML 更新文案） -->
+        <section class="card p-6 md:p-8 mb-8" aria-labelledby="roadmap-heading">
+            <h2 id="roadmap-heading" class="text-lg font-black text-slate-800 mb-2 flex items-center gap-2">
+                <span class="w-2 h-6 bg-violet-600 rounded-full"></span>
+                功能方向（預告）
+            </h2>
+            <p class="text-sm text-slate-500 mb-6">以下為目前規劃方向，實際排期會視同業回饋調整；歡迎在下方表單補充你想優先看到的項目。</p>
+            <div class="space-y-4">
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                    <p class="roadmap-pill text-emerald-700 mb-2">進行中／已上線</p>
+                    <ul class="text-sm text-slate-700 space-y-1.5 list-disc pl-5">
+                        <li>情景連結分享、匯出摘要圖、合規聲明與壓力測試提示</li>
+                        <li>港幣／美金顯示與多圖表對照</li>
+                    </ul>
+                </div>
+                <div class="rounded-2xl border border-amber-200 bg-amber-50/50 p-4">
+                    <p class="roadmap-pill text-amber-800 mb-2">評估中</p>
+                    <ul class="text-sm text-slate-700 space-y-1.5 list-disc pl-5">
+                        <li>雙方案並排對照（A／B 情景）</li>
+                        <li>簡報／全螢幕模式</li>
+                        <li>更多預設客戶畫像範本</li>
+                    </ul>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <p class="roadmap-pill text-slate-500 mb-2">需要你的意見</p>
+                    <p class="text-sm text-slate-600">哪些圖表最常在客戶面前使用？你希望與哪類公司計劃書數字對照？請在下方「詳細說明」告訴我們。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 意見表單 -->
+        <section class="card p-6 md:p-8 mb-12" aria-labelledby="form-heading">
+            <h2 id="form-heading" class="text-lg font-black text-slate-800 mb-2 flex items-center gap-2">
+                <span class="w-2 h-6 bg-blue-600 rounded-full"></span>
+                提交建議或意見
+            </h2>
+            <p class="text-sm text-slate-500 mb-6">送出後我們會以電郵閱讀（無法保證逐封回覆）。若需商務合作，請一併註明機構名稱。</p>
+
+            <div data-fs-success class="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-900 font-bold empty:hidden mb-4"></div>
+            <div data-fs-error class="text-sm text-rose-600 font-bold mb-4"></div>
+
+            <form id="agent-feedback-form" class="space-y-5" novalidate>
+                <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" class="absolute opacity-0 w-0 h-0 pointer-events-none" aria-hidden="true">
+
+                <div>
+                    <label for="fb-type" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">回饋類型 <span class="text-rose-500">*</span></label>
+                    <select id="fb-type" name="feedback_type" required data-fs-field>
+                        <option value="" disabled selected>請選擇</option>
+                        <option value="新功能建議">新功能建議</option>
+                        <option value="使用體驗與意見">使用體驗與意見</option>
+                        <option value="介面與文案">介面與文案</option>
+                        <option value="其他">其他</option>
+                    </select>
+                    <span data-fs-error="feedback_type" class="block text-xs text-rose-600 mt-1"></span>
+                </div>
+
+                <div>
+                    <label for="fb-feature" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">構想標題 <span class="text-slate-400 font-normal">（建議填寫，方便歸類）</span></label>
+                    <input type="text" id="fb-feature" name="feature_summary" data-fs-field placeholder="例如：希望加入保費融資簡化演示">
+                    <span data-fs-error="feature_summary" class="block text-xs text-rose-600 mt-1"></span>
+                </div>
+
+                <div>
+                    <label for="fb-msg" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">詳細說明 <span class="text-rose-500">*</span></label>
+                    <textarea id="fb-msg" name="message" required data-fs-field placeholder="請描述使用場景、目前痛點、或希望看到的畫面／數字呈現方式…"></textarea>
+                    <span data-fs-error="message" class="block text-xs text-rose-600 mt-1"></span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="fb-name" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">稱呼 <span class="text-slate-400 font-normal">（選填）</span></label>
+                        <input type="text" id="fb-name" name="name" autocomplete="name" data-fs-field>
+                        <span data-fs-error="name" class="block text-xs text-rose-600 mt-1"></span>
+                    </div>
+                    <div>
+                        <label for="fb-company" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">機構／團隊 <span class="text-slate-400 font-normal">（選填）</span></label>
+                        <input type="text" id="fb-company" name="company" autocomplete="organization" data-fs-field placeholder="持牌中介、團隊名稱等">
+                        <span data-fs-error="company" class="block text-xs text-rose-600 mt-1"></span>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="fb-email" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">電郵 <span class="text-rose-500">*</span></label>
+                    <input type="email" id="fb-email" name="email" autocomplete="email" required data-fs-field placeholder="方便必要時作簡短跟進">
+                    <span data-fs-error="email" class="block text-xs text-rose-600 mt-1"></span>
+                </div>
+
+                <div>
+                    <label for="fb-phone" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">電話 <span class="text-slate-400 font-normal">（選填）</span></label>
+                    <input type="tel" id="fb-phone" name="phone" autocomplete="tel" data-fs-field>
+                    <span data-fs-error="phone" class="block text-xs text-rose-600 mt-1"></span>
+                </div>
+
+                <input type="hidden" name="_subject" id="fb-subject" value="〔同業意見〕保險方案計算工具">
+
+                <button type="submit" data-fs-submit-btn class="w-full py-3.5 rounded-2xl bg-slate-900 text-white text-sm font-black hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 disabled:opacity-60 disabled:cursor-not-allowed">
+                    送出意見
+                </button>
+            </form>
+
+            <p class="text-[11px] text-slate-400 mt-5">經 <a href="https://formspree.io" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Formspree</a> 傳送至 W Digital。提交即表示你確認內容不含第三方敏感個資。</p>
+        </section>
+    </div>
+
+    <footer class="py-10 border-t border-slate-200 text-center bg-white/80 text-sm text-slate-500">
+        <a href="https://www.wdigitalagency.com" target="_blank" rel="noopener noreferrer" class="text-blue-600 font-black hover:underline">W Digital Agency</a>
+        <p class="mt-2 text-[10px] text-slate-400">© 2026</p>
+    </footer>
+
+    <script>
+        window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
+        formspree('initForm', { formElement: '#agent-feedback-form', formId: 'xanjzogn' });
+    </script>
+    <script src="https://unpkg.com/@formspree/ajax@1" defer></script>
+    <script>
+        (function () {
+            var typeEl = document.getElementById('fb-type');
+            var subjEl = document.getElementById('fb-subject');
+            function syncSubject() {
+                var t = typeEl && typeEl.value;
+                subjEl.value = t ? '〔同業意見〕' + t + ' — 保險方案計算工具' : '〔同業意見〕保險方案計算工具';
+            }
+            if (typeEl) typeEl.addEventListener('change', syncSubject);
+            syncSubject();
+        })();
+    </script>
+</body>
+</html>
