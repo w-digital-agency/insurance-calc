@@ -6,6 +6,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="保險方案計算">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="manifest" href="manifest.json">
     
     <title>保險方案計算工具 | W Digital</title>
     
@@ -98,12 +100,51 @@
             word-break: break-word;
         }
 
+        .print-only { display: none !important; }
         @media print {
             .no-print { display: none !important; }
+            .print-only { display: block !important; }
             body { background: white; }
             .card { box-shadow: none; border: 1px solid #e2e8f0; break-inside: avoid; }
             canvas { max-height: 320px !important; }
         }
+
+        #toastCopy {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(120%);
+            opacity: 0;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            z-index: 100;
+        }
+        #toastCopy.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        #qrModal { z-index: 90; }
+        #contactBackdrop { z-index: 83; }
+        #contactPanel { z-index: 84; }
+        #contactOpenBtn { z-index: 85; }
+        #wd-contact-form input[type="text"],
+        #wd-contact-form input[type="email"],
+        #wd-contact-form input[type="tel"],
+        #wd-contact-form textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.9375rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #wd-contact-form input:focus,
+        #wd-contact-form textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        #wd-contact-form textarea { min-height: 7rem; resize: vertical; }
+        [data-fs-error] { min-height: 1.25rem; }
     </style>
 </head>
 <body class="p-4 md:p-10">
@@ -131,6 +172,15 @@
                     <label class="text-[10px] font-black text-slate-500 whitespace-nowrap">美金兌港幣</label>
                     <input type="number" id="fxRate" value="7.8" step="0.01" min="1" class="w-20 text-sm font-mono font-bold border-none focus:ring-0 p-1" oninput="calculate()" title="參考匯率，可自調">
                 </div>
+                <button type="button" onclick="copyShareLink()" class="bg-white border border-slate-200 text-slate-600 px-4 py-3 rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
+                    複製情景連結
+                </button>
+                <button type="button" onclick="openQrModal()" class="bg-white border border-slate-200 text-slate-600 px-4 py-3 rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
+                    分享二維碼
+                </button>
+                <button type="button" onclick="exportSnapshotPng()" class="bg-white border border-slate-200 text-slate-600 px-4 py-3 rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
+                    匯出摘要圖
+                </button>
                 <button onclick="window.print()" class="bg-white border border-slate-200 text-slate-600 px-4 py-3 rounded-2xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
                     列印（可另存 PDF）
                 </button>
@@ -145,6 +195,26 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
             <div class="lg:col-span-4 space-y-8">
+                <!-- 合規與假設 -->
+                <div class="card p-6 border-l-4 border-slate-800 bg-slate-50/80">
+                    <h2 class="text-lg font-black mb-3 flex items-center gap-2 text-slate-800">
+                        <span class="w-2 h-5 bg-slate-800 rounded-full"></span> 合規與演示假設
+                    </h2>
+                    <p class="text-[11px] text-slate-600 leading-relaxed mb-3">
+                        向客戶展示前，請依所属機構合規要求口頭補充說明；本頁數字<strong class="text-amber-800">並非保證</strong>。
+                    </p>
+                    <ul class="text-[11px] text-slate-600 space-y-1.5 list-disc pl-4 mb-4 leading-relaxed">
+                        <li>模型採用<strong>固定年化演示 rate</strong>，不反映實際產品之<strong>歸原紅利、費用、退保價、貨幣匯兌</strong>等條款。</li>
+                        <li>未計及<strong>稅務、貸款、身故賠償、保單貸款或部份提取條款</strong>對現金流之影響。</li>
+                        <li>流動性與提前終止可能導致<strong>大於演示之損失</strong>，以<strong>正式利益說明文件</strong>為準。</li>
+                        <li>港幣顯示僅按<strong>輸入之參考匯率</strong>換算，不代表未來匯價。</li>
+                    </ul>
+                    <label class="flex items-start gap-3 cursor-pointer group">
+                        <input type="checkbox" id="ackCompliance" class="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        <span class="text-[11px] text-slate-700 leading-snug">本人確認此情景僅作<strong>內部培訓、同業討論或客戶教育</strong>之用，不替代保險公司批核之說明文件。</span>
+                    </label>
+                </div>
+
                 <div class="card p-8">
                     <h2 class="text-xl font-black mb-6 flex items-center gap-3 text-slate-800">
                         <span class="w-2 h-6 bg-blue-600 rounded-full"></span> 基礎數據
@@ -196,6 +266,8 @@
             </div>
 
             <div class="lg:col-span-8 space-y-10">
+                <!-- 匯出圖片範圍：情景、KPI、主圖 -->
+                <div id="exportRegion" class="space-y-10">
                 <!-- Scenario stress test (inspired by illustration comparison tools) -->
                 <div class="card p-6 bg-slate-900 text-white border-slate-800">
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
@@ -206,6 +278,10 @@
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="scenarioStrip">
                     </div>
+                </div>
+
+                <div id="aggressiveScenarioBanner" class="hidden rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-900 leading-relaxed">
+                    <strong class="font-black">情景提示：</strong><span id="aggressiveScenarioText"></span>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
@@ -253,6 +329,7 @@
                         <canvas id="mainChart" class="chart-canvas-tall"></canvas>
                     </div>
                 </div>
+                </div><!-- /exportRegion -->
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div class="card p-8">
@@ -295,7 +372,95 @@
                 </div>
             </div>
         </div>
+
+        <!-- 列印專用：完整合規聲明（螢幕隱藏） -->
+        <section class="print-only mt-10 max-w-4xl mx-auto px-4 space-y-3 text-xs text-slate-800 leading-relaxed border-t border-slate-200 pt-8">
+            <h2 class="text-sm font-black">列印附件 — 合規與免責聲明</h2>
+            <p>本輸出由「專業保險方案展示」工具產生，僅供港澳保險業界前線作銷售輔助及情景討論。所有金額、回報與現金流均為<strong>非保證</strong>之簡化演算，不代表任何保險公司之正式計劃書或利益說明文件。</p>
+            <p>正式投保建議、產品條款、費用及非保證利益之披露，須以<strong>保險公司批核文件</strong>及<strong>持牌人士按規例作出之說明</strong>為準。本工具不構成要約、招攬或法律意見。</p>
+            <ul class="list-disc pl-5 space-y-1">
+                <li>演示採固定年化假設，未反映實際紅利實現率、費用扣減、保單年度差異。</li>
+                <li>未計及稅務、信貸、提早退保、保單貸款及部分提取對價值之影響。</li>
+                <li>港幣金額僅按頁面所輸入參考匯率換算。</li>
+            </ul>
+            <p class="text-[10px] text-slate-500">列印時間：<span id="printTimestamp"></span></p>
+        </section>
     </div>
+
+    <div id="toastCopy" class="no-print bg-slate-900 text-white text-sm font-bold px-6 py-3 rounded-2xl shadow-xl pointer-events-none">
+        已複製到剪貼簿
+    </div>
+
+    <div id="qrModal" class="no-print fixed inset-0 bg-black/50 hidden items-center justify-center p-4" onclick="if(event.target===this) closeQrModal()">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center" onclick="event.stopPropagation()">
+            <p class="text-sm font-black text-slate-800 mb-2">掃描還原此情景</p>
+            <p class="text-[10px] text-slate-500 mb-4 break-words" id="qrModalUrlPreview"></p>
+            <canvas id="qrCanvas" class="mx-auto"></canvas>
+            <button type="button" onclick="closeQrModal()" class="mt-6 w-full py-3 rounded-2xl bg-slate-100 text-slate-700 text-sm font-bold">關閉</button>
+        </div>
+    </div>
+
+    <div id="contactBackdrop" class="no-print fixed inset-0 bg-slate-900/40 hidden transition-opacity" aria-hidden="true" onclick="closeContactPanel()"></div>
+    <aside id="contactPanel" class="no-print fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-[-12px_0_40px_rgba(0,0,0,0.12)] z-[84] flex flex-col translate-x-full transition-transform duration-300 ease-out border-l border-slate-100" role="dialog" aria-labelledby="contactPanelTitle" aria-modal="true">
+        <div class="flex items-start justify-between gap-4 p-6 border-b border-slate-100">
+            <div>
+                <p class="text-[10px] font-black text-blue-600 tracking-widest mb-1">W Digital Agency</p>
+                <h2 id="contactPanelTitle" class="text-xl font-black text-slate-900">聯絡我們</h2>
+                <p class="text-xs text-slate-500 mt-1">給同業顧問與管理層</p>
+            </div>
+            <button type="button" onclick="closeContactPanel()" class="shrink-0 w-10 h-10 rounded-xl bg-slate-100 text-slate-600 font-black hover:bg-slate-200 transition-all text-lg leading-none" aria-label="關閉">×</button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6 space-y-4 text-sm text-slate-700 leading-relaxed">
+            <p>本工具已公開予業界使用。如需<strong>進一步調研</strong>（流程銜接、合規展示、客製化）、或想交流 <strong>Vibe coding</strong>（AI 協作加速設計與上線），請填寫表格，我們會盡快回覆。</p>
+
+            <div data-fs-success class="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-900 font-bold empty:hidden"></div>
+            <div data-fs-error class="text-sm text-rose-600 font-bold"></div>
+
+            <form id="wd-contact-form" class="space-y-4" novalidate>
+                <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" class="absolute opacity-0 w-0 h-0 pointer-events-none" aria-hidden="true">
+
+                <div>
+                    <label for="wd-c-name" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">稱呼／姓名 <span class="text-slate-400 font-normal">（選填）</span></label>
+                    <input type="text" id="wd-c-name" name="name" autocomplete="name" data-fs-field placeholder="陳先生／Ms Chan">
+                    <span data-fs-error="name" class="block text-xs text-rose-600 mt-1"></span>
+                </div>
+                <div>
+                    <label for="wd-c-company" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">機構／團隊</label>
+                    <input type="text" id="wd-c-company" name="company" autocomplete="organization" data-fs-field placeholder="保險中介、Broker 名稱等">
+                    <span data-fs-error="company" class="block text-xs text-rose-600 mt-1"></span>
+                </div>
+                <div>
+                    <label for="wd-c-phone" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">聯絡電話 <span class="text-slate-400 font-normal">（選填）</span></label>
+                    <input type="tel" id="wd-c-phone" name="phone" autocomplete="tel" data-fs-field placeholder="方便回覆之號碼">
+                    <span data-fs-error="phone" class="block text-xs text-rose-600 mt-1"></span>
+                </div>
+                <div>
+                    <label for="wd-c-email" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">電郵地址 <span class="text-rose-500">*</span></label>
+                    <input type="email" id="wd-c-email" name="email" autocomplete="email" required data-fs-field placeholder="you@example.com">
+                    <span data-fs-error="email" class="block text-xs text-rose-600 mt-1"></span>
+                </div>
+                <div>
+                    <label for="wd-c-topic" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">郵件主旨</label>
+                    <input type="text" id="wd-c-topic" name="_subject" data-fs-field placeholder="例如：工具洽詢、客製化、Vibe coding 工作坊" value="專業保險方案展示工具 — 聯絡">
+                    <span data-fs-error="_subject" class="block text-xs text-rose-600 mt-1"></span>
+                </div>
+                <div>
+                    <label for="wd-c-msg" class="block text-[10px] font-black text-slate-500 tracking-wide mb-1.5">訊息內容 <span class="text-rose-500">*</span></label>
+                    <textarea id="wd-c-msg" name="message" required data-fs-field placeholder="請簡述需求或希望進一步了解的方向…"></textarea>
+                    <span data-fs-error="message" class="block text-xs text-rose-600 mt-1"></span>
+                </div>
+
+                <button type="submit" data-fs-submit-btn class="w-full py-3.5 rounded-2xl bg-blue-600 text-white text-sm font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/25 disabled:opacity-60 disabled:cursor-not-allowed">
+                    送出訊息
+                </button>
+            </form>
+
+            <p class="text-[11px] text-slate-400">訊息經 <a href="https://formspree.io" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">Formspree</a> 傳送。請勿於表格填寫客戶敏感個人資料。</p>
+        </div>
+    </aside>
+    <button type="button" id="contactOpenBtn" onclick="openContactPanel()" class="no-print fixed bottom-6 right-4 md:bottom-auto md:top-[38%] md:right-0 z-[85] flex items-center justify-center gap-2 rounded-full md:rounded-l-2xl md:rounded-r-none px-5 py-3.5 md:px-4 md:py-10 md:[writing-mode:vertical-rl] md:[text-orientation:mixed] bg-slate-900 text-white text-sm font-black shadow-xl shadow-slate-900/25 hover:bg-slate-800 transition-all border border-slate-800 md:border-r-0">
+        聯絡我們
+    </button>
 
     <footer class="mt-20 py-12 border-t border-slate-200 text-center bg-white/80">
         <p class="text-slate-400 text-xs font-bold tracking-widest mb-2">
@@ -305,11 +470,21 @@
             W Digital Agency
         </a>
         <p class="mt-4 text-slate-400 text-[10px] max-w-2xl mx-auto leading-relaxed px-4">
-            本頁面非任何保險公司官方建議書工具。向客戶演示前，請遵循公司合規要求並說明非保證元素。
+            本頁面非任何保險公司官方建議書工具。向客戶演示前，請遵循公司合規要求並說明非保證元素。可加入主畫面以便離線開啟（視裝置及瀏覽器而定）。
+        </p>
+        <p class="mt-3 text-[10px] text-slate-500">
+            諮詢與合作：請使用頁面「<button type="button" onclick="openContactPanel()" class="text-blue-600 font-bold hover:underline bg-transparent border-none cursor-pointer p-0">聯絡我們</button>」表單。
         </p>
         <p class="mt-2 text-slate-300 text-[10px]">© 2026 版權所有</p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script>
+        window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
+        formspree('initForm', { formElement: '#wd-contact-form', formId: 'xanjzogn' });
+    </script>
+    <script src="https://unpkg.com/@formspree/ajax@1" defer></script>
     <script>
         let chart, chartDonut, chartSens;
         let displayCurrency = 'USD';
@@ -328,14 +503,18 @@
             return usd;
         }
 
+        function syncCurrencyButtons() {
+            document.getElementById('btnCurrUSD').className = displayCurrency === 'USD'
+                ? 'px-3 py-1.5 rounded-xl text-xs font-black bg-slate-900 text-white'
+                : 'px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100';
+            document.getElementById('btnCurrHKD').className = displayCurrency === 'HKD'
+                ? 'px-3 py-1.5 rounded-xl text-xs font-black bg-slate-900 text-white'
+                : 'px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100';
+        }
+
         function setCurrency(c) {
             displayCurrency = c;
-            document.getElementById('btnCurrUSD').className = c === 'USD'
-                ? 'px-3 py-1.5 rounded-xl text-xs font-black bg-slate-900 text-white'
-                : 'px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100';
-            document.getElementById('btnCurrHKD').className = c === 'HKD'
-                ? 'px-3 py-1.5 rounded-xl text-xs font-black bg-slate-900 text-white'
-                : 'px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100';
+            syncCurrencyButtons();
             calculate();
         }
 
@@ -447,6 +626,7 @@
             const dataCumulativePremium = [];
             const tableRows = [];
             let breakEvenAge = null;
+            let depleted = false;
 
             for (let t = 1; t <= (100 - entryAge + 1); t++) {
                 const age = entryAge + t - 1;
@@ -459,6 +639,7 @@
 
                 cumulativePremium += deposit;
                 cashValue = (cashValue + deposit) * (1 + irrFraction) - withdrawal;
+                if (withdrawal > 0 && cashValue < 0) depleted = true;
                 if (cashValue < 0) cashValue = 0;
 
                 totalWithdraw += withdrawal;
@@ -486,7 +667,8 @@
 
             return {
                 entryAge, totalPaid, totalWithdraw, finalValue: cashValue, multiple, netWealth,
-                breakEvenAge, labels, dataCashValue, dataWithdrawals, dataCumulativePremium, tableRows
+                breakEvenAge, labels, dataCashValue, dataWithdrawals, dataCumulativePremium, tableRows,
+                depleted
             };
         }
 
@@ -620,9 +802,178 @@
             });
         }
 
+        function updateAggressiveBanner(out, irrFraction) {
+            const box = document.getElementById('aggressiveScenarioBanner');
+            const txt = document.getElementById('aggressiveScenarioText');
+            let msg = '';
+            let show = false;
+            if (out.depleted) {
+                show = true;
+                msg = '本情景曾出現「提取大於可動用價值」之年度（演示上歸零處理），不可解讀為可長期全額提取，僅供內部壓力測試。';
+            } else if (out.multiple > 60) {
+                show = true;
+                msg = '回報倍數極高，明顯屬過度樂觀假設；對外請配套保守情景及計劃書非保證說明。';
+            } else if (out.multiple > 38 && irrFraction > 0.065) {
+                show = true;
+                msg = '演示倍數與年化回報同時偏高，易產生誤解，建議口頭強調「非保證」並保留公司文件為準。';
+            } else if (irrFraction > 0.075 && out.totalWithdraw > out.totalPaid * 3) {
+                show = true;
+                msg = '高回報假設疊加大量提取，簡化模型或過於進取；客戶面談請審慎。';
+            }
+            if (show) {
+                box.classList.remove('hidden');
+                txt.textContent = msg;
+            } else {
+                box.classList.add('hidden');
+                txt.textContent = '';
+            }
+        }
+
+        function buildStateFromForm() {
+            return {
+                v: 1,
+                e: parseInt(document.getElementById('entryAge').value) || 0,
+                y: parseInt(document.getElementById('payYears').value) || 0,
+                p: parseFloat(document.getElementById('annualPremium').value) || 0,
+                i: parseFloat(document.getElementById('irr').value) || 0,
+                f: parseFloat(document.getElementById('fxRate').value) || 7.8,
+                c: displayCurrency,
+                w: withdrawals.map(w => ({ a: w.startAge, b: w.endAge, m: w.amount, l: w.label }))
+            };
+        }
+
+        function encodeState() {
+            const json = JSON.stringify(buildStateFromForm());
+            const utf8 = new TextEncoder().encode(json);
+            let bin = '';
+            utf8.forEach(byte => { bin += String.fromCharCode(byte); });
+            return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        function decodeState(enc) {
+            try {
+                let b = enc.replace(/-/g, '+').replace(/_/g, '/');
+                while (b.length % 4) b += '=';
+                const bin = atob(b);
+                const bytes = new Uint8Array(bin.length);
+                for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                const s = JSON.parse(new TextDecoder().decode(bytes));
+                if (s.v !== 1) return null;
+                return s;
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function applyStateFromHash(s) {
+            if (!s) return;
+            document.getElementById('entryAge').value = s.e;
+            document.getElementById('payYears').value = s.y;
+            document.getElementById('annualPremium').value = s.p;
+            document.getElementById('irr').value = s.i;
+            document.getElementById('irrValue').innerText = parseFloat(s.i).toFixed(1) + '%';
+            document.getElementById('fxRate').value = s.f;
+            displayCurrency = s.c === 'HKD' ? 'HKD' : 'USD';
+            syncCurrencyButtons();
+            withdrawals = (s.w || []).map(x => ({
+                startAge: x.a,
+                endAge: x.b,
+                amount: x.m,
+                label: (x.l && String(x.l)) || '項目'
+            }));
+            if (withdrawals.length === 0) {
+                withdrawals = [
+                    { startAge: 18, endAge: 21, amount: 200000, label: '海外升學基金' },
+                    { startAge: 30, endAge: 30, amount: 200000, label: '首期、創業基金' },
+                    { startAge: 65, endAge: 88, amount: 120000, label: '退休長糧計劃' }
+                ];
+            }
+            renderWithdrawalInputs();
+            calculate();
+        }
+
+        function getShareUrl() {
+            return location.origin + location.pathname + location.search + '#s=' + encodeState();
+        }
+
+        function showToastCopy() {
+            const t = document.getElementById('toastCopy');
+            t.classList.add('show');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+        }
+
+        function copyShareLink() {
+            const url = getShareUrl();
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(showToastCopy).catch(() => {
+                    window.prompt('請手動複製以下連結：', url);
+                });
+            } else {
+                window.prompt('請手動複製以下連結：', url);
+            }
+        }
+
+        function openQrModal() {
+            const url = getShareUrl();
+            document.getElementById('qrModalUrlPreview').textContent = url.length > 96 ? url.slice(0, 96) + '…' : url;
+            const wrap = document.getElementById('qrModal');
+            wrap.classList.remove('hidden');
+            wrap.classList.add('flex');
+            const canvas = document.getElementById('qrCanvas');
+            if (typeof QRCode !== 'undefined') {
+                QRCode.toCanvas(canvas, url, { width: 220, margin: 2 }, () => {});
+            }
+        }
+
+        function closeQrModal() {
+            const wrap = document.getElementById('qrModal');
+            wrap.classList.add('hidden');
+            wrap.classList.remove('flex');
+        }
+
+        function openContactPanel() {
+            document.getElementById('contactPanel').classList.remove('translate-x-full');
+            document.getElementById('contactBackdrop').classList.remove('hidden');
+            document.getElementById('contactBackdrop').setAttribute('aria-hidden', 'false');
+        }
+
+        function closeContactPanel() {
+            document.getElementById('contactPanel').classList.add('translate-x-full');
+            document.getElementById('contactBackdrop').classList.add('hidden');
+            document.getElementById('contactBackdrop').setAttribute('aria-hidden', 'true');
+        }
+
+        async function exportSnapshotPng() {
+            const el = document.getElementById('exportRegion');
+            if (typeof html2canvas === 'undefined') {
+                alert('匯出模組尚未載入，請檢查網絡後重試。');
+                return;
+            }
+            try {
+                const canvas = await html2canvas(el, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#f1f5f9',
+                    logging: false
+                });
+                canvas.toBlob((blob) => {
+                    if (!blob) return;
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'wdigital-scheme-' + new Date().toISOString().slice(0, 10) + '.png';
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                }, 'image/png');
+            } catch (e) {
+                alert('匯出失敗，可改用系統截圖或列印功能。');
+            }
+        }
+
         function calculate() {
             const irr = (parseFloat(document.getElementById('irr').value) || 0) / 100;
             const out = simulate(irr);
+            updateAggressiveBanner(out, irr);
 
             document.getElementById('statTotalPaid').innerText = formatCurrencyUsd(out.totalPaid);
             document.getElementById('statTotalWithdraw').innerText = formatCurrencyUsd(out.totalWithdraw);
@@ -738,8 +1089,30 @@
         }
 
         window.onload = () => {
-            renderWithdrawalInputs();
-            calculate();
+            let parsed = null;
+            if (location.hash.startsWith('#s=')) {
+                const raw = location.hash.slice(3);
+                try {
+                    parsed = decodeState(decodeURIComponent(raw));
+                } catch (e1) {
+                    parsed = decodeState(raw);
+                }
+            }
+            if (parsed) applyStateFromHash(parsed);
+            else {
+                renderWithdrawalInputs();
+                calculate();
+            }
+            window.addEventListener('beforeprint', () => {
+                const el = document.getElementById('printTimestamp');
+                if (el) el.textContent = new Date().toLocaleString('zh-HK');
+            });
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            }
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeContactPanel();
+            });
         };
     </script>
 </body>

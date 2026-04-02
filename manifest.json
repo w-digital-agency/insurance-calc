@@ -1,0 +1,11 @@
+{
+  "name": "保險方案計算工具",
+  "short_name": "方案計算",
+  "description": "W Digital · 保險情景演示與視覺化",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#2563eb",
+  "lang": "zh-HK",
+  "orientation": "any"
+}
