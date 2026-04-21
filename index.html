@@ -137,7 +137,17 @@
             body { background: white; }
             .card { box-shadow: none; border: 1px solid #e2e8f0; break-inside: avoid; }
             canvas { max-height: 320px !important; }
+            .print-hide { display: none !important; }
         }
+
+        body.presentation-mode { background: #0f172a; }
+        body.presentation-mode .presentation-hide { display: none !important; }
+        body.presentation-mode .presentation-main { background: transparent; }
+        body.presentation-mode .presentation-main .card { background: rgba(255,255,255,0.98); border-color: #e2e8f0; }
+        .presentation-exit { display: none; }
+        body.presentation-mode .presentation-exit { display: inline-flex !important; }
+        .presentation-only { display: none !important; }
+        body.presentation-mode .presentation-only { display: block !important; }
 
         #toastCopy {
             position: fixed;
@@ -180,7 +190,7 @@
 <body class="p-4 md:p-10">
     <div class="max-w-7xl mx-auto main-content">
         <!-- Disclaimer -->
-        <aside class="mb-6 rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-xs text-amber-950 leading-relaxed">
+        <aside class="mb-6 rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-xs text-amber-950 leading-relaxed presentation-hide">
             <strong class="font-black">重要提示：</strong>本工具僅供港澳保險業界前線作銷售輔助及情景展示，數字為<b>非保證</b>簡化模型，不代表任何保險公司計劃書。正式建議以公司批核之利益說明文件及產品條款為準。
         </aside>
 
@@ -226,8 +236,25 @@
             </div>
         </header>
 
+        <button type="button" onclick="exitPresentation()" class="presentation-exit no-print fixed top-4 right-4 z-[200] inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-slate-900 text-sm font-black shadow-xl border border-slate-200 hover:bg-slate-50" title="結束簡報（Esc）">
+            結束簡報
+        </button>
+
+        <div class="card p-4 mb-6 no-print presentation-hide flex flex-col lg:flex-row flex-wrap gap-4 lg:items-center lg:justify-between" id="toolModeBar">
+            <div class="flex flex-wrap gap-2 items-center">
+                <span class="text-[10px] font-black text-slate-500 tracking-wider">檢視</span>
+                <div class="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1 gap-0.5">
+                    <button type="button" id="btnModeSingle" onclick="setCompareMode(false)" class="px-4 py-2 rounded-lg text-xs font-black transition-all bg-white shadow-sm text-slate-900">單一方案</button>
+                    <button type="button" id="btnModeCompare" onclick="setCompareMode(true)" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-600 hover:bg-white/80">A／B 對照</button>
+                </div>
+                <button type="button" onclick="enterPresentation()" class="px-4 py-2 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-800 text-xs font-black hover:bg-indigo-100 transition-all">簡報模式</button>
+                <button type="button" onclick="applyConservativePreset()" class="px-4 py-2 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 text-xs font-black hover:bg-amber-100 transition-all" title="演示年化約 4%，配合口頭非保證說明">保守演示一鍵</button>
+            </div>
+            <p class="text-[10px] text-slate-500 max-w-xl leading-relaxed">A／B 對照：同一組提取策略，可輸入兩套供款／回報假設；簡報模式隱藏輸入區，方便投影或 iPad 面談。</p>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            <div class="lg:col-span-4 space-y-8">
+            <div id="leftToolColumn" class="lg:col-span-4 space-y-8 presentation-hide">
                 <!-- 合規與假設 -->
                 <div class="card p-6 border-l-4 border-slate-800 bg-slate-50/80">
                     <h2 class="text-lg font-black mb-3 flex items-center gap-2 text-slate-800">
@@ -250,7 +277,7 @@
 
                 <div class="card p-8">
                     <h2 class="text-xl font-black mb-6 flex items-center gap-3 text-slate-800">
-                        <span class="w-2 h-6 bg-blue-600 rounded-full"></span> 基礎數據
+                        <span class="w-2 h-6 bg-blue-600 rounded-full"></span> <span id="schemeATitle">基礎數據</span>
                     </h2>
                     <div class="grid grid-cols-2 gap-6">
                         <div class="input-group">
@@ -271,6 +298,34 @@
                             <div class="flex items-center gap-5 py-2">
                                 <input type="range" id="irr" min="3" max="8" step="0.1" value="6" class="flex-grow h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-blue-600" oninput="updateIrrLabel(this.value)">
                                 <span id="irrValue" class="font-mono font-black text-blue-600 text-xl min-w-[60px]">6.0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="schemeBCard" class="card p-8 hidden border-2 border-indigo-100 bg-indigo-50/30">
+                    <h2 class="text-xl font-black mb-6 flex items-center gap-3 text-indigo-900">
+                        <span class="w-2 h-6 bg-indigo-600 rounded-full"></span> 方案 B（對照）
+                    </h2>
+                    <p class="text-[10px] text-indigo-700/80 mb-4">與方案 A <strong>共用同一組提取策略</strong>；可對照不同供款或演示回報。</p>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="input-group">
+                            <label>受保人年齡</label>
+                            <input type="number" id="entryAgeB" value="0" oninput="calculate()">
+                        </div>
+                        <div class="input-group">
+                            <label>供款年期</label>
+                            <input type="number" id="payYearsB" value="5" oninput="calculate()">
+                        </div>
+                        <div class="input-group col-span-2">
+                            <label>每年保費（美金）</label>
+                            <input type="number" id="annualPremiumB" value="97143" oninput="calculate()">
+                        </div>
+                        <div class="input-group col-span-2">
+                            <label>演示年化回報率（非保證）</label>
+                            <div class="flex items-center gap-5 py-2">
+                                <input type="range" id="irrB" min="3" max="8" step="0.1" value="5" class="flex-grow h-2 bg-slate-100 rounded-full appearance-none cursor-pointer accent-indigo-600" oninput="updateIrrBLabel(this.value)">
+                                <span id="irrValueB" class="font-mono font-black text-indigo-700 text-xl min-w-[60px]">5.0%</span>
                             </div>
                         </div>
                     </div>
@@ -298,11 +353,14 @@
                 </div>
             </div>
 
-            <div class="lg:col-span-8 space-y-10">
-                <!-- 匯出圖片範圍：情景、KPI、主圖 -->
+            <div class="lg:col-span-8 space-y-10 presentation-main">
+                <div class="presentation-only rounded-2xl border border-white/20 bg-white/10 px-5 py-4 text-sm text-slate-100 mb-2">
+                    <p class="font-black text-base tracking-tight">專業保險方案展示</p>
+                    <p class="text-xs text-slate-300 mt-1 leading-relaxed">非保證演示 · 內部培訓／客戶教育 · 正式以公司計劃書及條款為準</p>
+                </div>
+
                 <div id="exportRegion" class="space-y-10">
-                <!-- Scenario stress test (inspired by illustration comparison tools) -->
-                <div class="card p-6 bg-slate-900 text-white border-slate-800">
+                <div class="card p-6 bg-slate-900 text-white border-slate-800 presentation-hide">
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
                         <div>
                             <h3 class="text-sm font-black tracking-widest text-blue-300">回報率三情景 · 壓力測試</h3>
@@ -346,16 +404,43 @@
                     </div>
                 </div>
 
+                <div id="compareBRow" class="hidden space-y-3">
+                    <p class="text-[10px] font-black text-indigo-700 tracking-wider">方案 B · 主要指標</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="card stat-kpi-card p-3 bg-indigo-50/80 border border-indigo-100">
+                            <p class="text-[9px] text-indigo-600 font-black mb-0.5">總保費</p>
+                            <p class="text-sm font-black text-indigo-950" id="statBTotalPaid">—</p>
+                        </div>
+                        <div class="card stat-kpi-card p-3 bg-indigo-50/80 border border-indigo-100">
+                            <p class="text-[9px] text-indigo-600 font-black mb-0.5">100歲帳戶</p>
+                            <p class="text-sm font-black text-indigo-950" id="statBFinalValue">—</p>
+                        </div>
+                        <div class="card stat-kpi-card p-3 bg-indigo-50/80 border border-indigo-100">
+                            <p class="text-[9px] text-indigo-600 font-black mb-0.5">回報倍數</p>
+                            <p class="text-sm font-black text-indigo-950" id="statBMultiple">—</p>
+                        </div>
+                        <div class="card stat-kpi-card p-3 bg-indigo-50/80 border border-indigo-100">
+                            <p class="text-[9px] text-indigo-600 font-black mb-0.5">淨財富（演示）</p>
+                            <p class="text-sm font-black text-indigo-950" id="statBNetWealth">—</p>
+                        </div>
+                    </div>
+                    <div id="compareDeltaBar" class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 leading-relaxed">
+                        <strong class="text-slate-900">對照摘要：</strong><span id="compareDeltaText">—</span>
+                    </div>
+                </div>
+
                 <div class="card p-8">
                     <div class="flex justify-between items-end mb-8 flex-wrap gap-4">
                         <div>
                             <h3 class="text-lg font-black text-slate-800">資產與現金流預測</h3>
-                            <p class="text-xs text-slate-400 font-medium">帳戶結餘、年度提取、累計已繳保費（階梯線）</p>
+                            <p id="mainChartSubline" class="text-xs text-slate-400 font-medium">帳戶結餘、年度提取、累計已繳保費（階梯線）</p>
                         </div>
-                        <div class="flex gap-4 text-[10px] font-bold tracking-widest flex-wrap">
-                            <span class="flex items-center gap-2 text-blue-600"><span class="w-3 h-3 bg-blue-600 rounded-full"></span> 帳戶餘額</span>
-                            <span class="flex items-center gap-2 text-rose-500"><span class="w-3 h-3 bg-rose-500 rounded-full"></span> 年度提取</span>
-                            <span class="flex items-center gap-2 text-slate-500"><span class="w-3 h-3 bg-slate-400 rounded-full"></span> 累計保費</span>
+                        <div id="mainChartLegend" class="flex gap-4 text-[10px] font-bold tracking-widest flex-wrap">
+                            <span id="legendCashA" class="flex items-center gap-2 text-blue-600"><span class="w-3 h-3 bg-blue-600 rounded-full"></span> 帳戶餘額</span>
+                            <span id="legendWithdraw" class="flex items-center gap-2 text-rose-500"><span class="w-3 h-3 bg-rose-500 rounded-full"></span> 年度提取</span>
+                            <span id="legendPremA" class="flex items-center gap-2 text-slate-500"><span class="w-3 h-3 bg-slate-400 rounded-full"></span> 累計已繳保費</span>
+                            <span id="legendCompareB" class="hidden items-center gap-2 text-indigo-600"><span class="w-3 h-3 bg-indigo-600 rounded-full"></span> 帳戶餘額（B）</span>
+                            <span id="legendCompareBp" class="hidden items-center gap-2 text-indigo-400"><span class="w-3 h-3 rounded-full border-2 border-indigo-400 border-dashed"></span> 累計保費（B）</span>
                         </div>
                     </div>
                     <div class="relative h-[400px]">
@@ -364,7 +449,7 @@
                 </div>
                 </div><!-- /exportRegion -->
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 presentation-hide">
                     <div class="card p-8">
                         <h3 class="text-lg font-black text-slate-800 mb-2">100歲時 · 資金結構</h3>
                         <p class="text-xs text-slate-400 mb-6">已提取累計與期末剩餘（助客戶理解「用錢」與「留在保單」比例）</p>
@@ -381,7 +466,7 @@
                     </div>
                 </div>
 
-                <div class="card overflow-hidden">
+                <div class="card overflow-hidden presentation-hide">
                     <div class="bg-slate-50/80 px-8 py-5 border-b border-slate-100 flex justify-between items-center flex-wrap gap-2">
                         <span class="text-sm font-black text-slate-700 tracking-wide">關鍵年份報告</span>
                         <span class="px-3 py-1 bg-white rounded-full text-[10px] font-bold text-slate-400 border border-slate-200 shadow-sm">供款期／提取期／10年節點／100歲</span>
@@ -405,6 +490,19 @@
                 </div>
             </div>
         </div>
+
+        <!-- 列印專用：一頁摘要（螢幕隱藏） -->
+        <section class="print-only max-w-4xl mx-auto px-4 mb-8 pb-6 border-b border-slate-200">
+            <h1 class="text-xl font-black text-slate-900 mb-2">專業保險方案展示 · 列印摘要</h1>
+            <p class="text-xs text-slate-500 mb-4" id="printSummaryMeta"></p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div class="border border-slate-200 rounded-lg p-3"><p class="text-slate-400 font-bold mb-1">總保費</p><p class="font-black text-slate-900" id="printStatPaid">—</p></div>
+                <div class="border border-slate-200 rounded-lg p-3"><p class="text-slate-400 font-bold mb-1">累計提取</p><p class="font-black text-slate-900" id="printStatWithdraw">—</p></div>
+                <div class="border border-slate-200 rounded-lg p-3"><p class="text-slate-400 font-bold mb-1">100歲帳戶</p><p class="font-black text-slate-900" id="printStatFinal">—</p></div>
+                <div class="border border-slate-200 rounded-lg p-3"><p class="text-slate-400 font-bold mb-1">回報倍數</p><p class="font-black text-slate-900" id="printStatMultiple">—</p></div>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-4" id="printCompareLine"></p>
+        </section>
 
         <!-- 列印專用：完整合規聲明（螢幕隱藏） -->
         <section class="print-only mt-10 max-w-4xl mx-auto px-4 space-y-3 text-xs text-slate-800 leading-relaxed border-t border-slate-200 pt-8">
@@ -522,6 +620,8 @@
     <script>
         let chart, chartDonut, chartSens;
         let displayCurrency = 'USD';
+        let compareMode = false;
+        let comparePrimed = false;
         let withdrawals = [
             { startAge: 18, endAge: 21, amount: 200000, label: '海外升學基金' },
             { startAge: 30, endAge: 30, amount: 200000, label: '首期、創業基金' },
@@ -557,6 +657,99 @@
             calculate();
         }
 
+        function updateIrrBLabel(val, skipCalculate) {
+            document.getElementById('irrValueB').innerText = parseFloat(val).toFixed(1) + '%';
+            if (!skipCalculate) calculate();
+        }
+
+        function syncBFromA() {
+            document.getElementById('entryAgeB').value = document.getElementById('entryAge').value;
+            document.getElementById('payYearsB').value = document.getElementById('payYears').value;
+            document.getElementById('annualPremiumB').value = document.getElementById('annualPremium').value;
+            const ira = document.getElementById('irr').value;
+            document.getElementById('irrB').value = ira;
+            updateIrrBLabel(ira, true);
+        }
+
+        function setCompareMode(on, opts) {
+            opts = opts || {};
+            compareMode = !!on;
+            if (compareMode && !comparePrimed && !opts.fromHash) {
+                syncBFromA();
+                comparePrimed = true;
+            }
+            if (opts.fromHash && compareMode) comparePrimed = true;
+
+            const card = document.getElementById('schemeBCard');
+            const brow = document.getElementById('compareBRow');
+            const btnS = document.getElementById('btnModeSingle');
+            const btnC = document.getElementById('btnModeCompare');
+            const titleA = document.getElementById('schemeATitle');
+            const active = 'px-4 py-2 rounded-lg text-xs font-black transition-all bg-white shadow-sm text-slate-900';
+            const idle = 'px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-600 hover:bg-white/80';
+
+            if (compareMode) {
+                card.classList.remove('hidden');
+                brow.classList.remove('hidden');
+                titleA.textContent = '方案 A（基礎數據）';
+                btnS.className = idle;
+                btnC.className = active;
+            } else {
+                card.classList.add('hidden');
+                brow.classList.add('hidden');
+                titleA.textContent = '基礎數據';
+                btnS.className = active;
+                btnC.className = idle;
+            }
+
+            const le = document.getElementById('legendCompareB');
+            const lep = document.getElementById('legendCompareBp');
+            if (compareMode) {
+                le.classList.remove('hidden');
+                le.classList.add('inline-flex', 'items-center');
+                lep.classList.remove('hidden');
+                lep.classList.add('inline-flex', 'items-center');
+            } else {
+                le.classList.add('hidden');
+                le.classList.remove('inline-flex', 'items-center');
+                lep.classList.add('hidden');
+                lep.classList.remove('inline-flex', 'items-center');
+            }
+            syncMainChartLegendLabels();
+            if (!opts.skipCalculate) calculate();
+        }
+
+        function syncMainChartLegendLabels() {
+            const cash = document.getElementById('legendCashA');
+            const prem = document.getElementById('legendPremA');
+            if (!cash || !prem) return;
+            const cashTxt = compareMode ? '帳戶餘額（A）' : '帳戶餘額';
+            const premTxt = compareMode ? '累計保費（A）' : '累計已繳保費';
+            [ [cash, cashTxt], [prem, premTxt] ].forEach(([el, t]) => {
+                const textNode = [...el.childNodes].find(n => n.nodeType === Node.TEXT_NODE);
+                if (textNode) textNode.textContent = ' ' + t;
+                else el.appendChild(document.createTextNode(' ' + t));
+            });
+        }
+
+        function enterPresentation() {
+            document.body.classList.add('presentation-mode');
+        }
+
+        function exitPresentation() {
+            document.body.classList.remove('presentation-mode');
+        }
+
+        function applyConservativePreset() {
+            document.getElementById('irr').value = 4;
+            document.getElementById('irrValue').innerText = '4.0%';
+            if (compareMode) {
+                document.getElementById('irrB').value = 4;
+                document.getElementById('irrValueB').innerText = '4.0%';
+            }
+            calculate();
+        }
+
         function addWithdrawalRow() {
             withdrawals.push({ startAge: 60, endAge: 60, amount: 50000, label: '新方案項目' });
             renderWithdrawalInputs();
@@ -586,8 +779,15 @@
             document.getElementById('irr').value = 6;
             document.getElementById('irrValue').innerText = '6.0%';
             document.getElementById('fxRate').value = 7.8;
+            document.getElementById('entryAgeB').value = 0;
+            document.getElementById('annualPremiumB').value = 97143;
+            document.getElementById('payYearsB').value = 5;
+            document.getElementById('irrB').value = 5;
+            document.getElementById('irrValueB').innerText = '5.0%';
+            comparePrimed = false;
             setCurrency('USD');
             renderWithdrawalInputs();
+            setCompareMode(false, { skipCalculate: true });
             calculate();
         }
 
@@ -643,11 +843,19 @@
             return displayCurrency === 'HKD' ? '港幣' : '美金';
         }
 
-        /** Core projection engine — reusable for scenario / sensitivity */
-        function simulate(irrFraction) {
-            const entryAge = parseInt(document.getElementById('entryAge').value) || 0;
-            const annualPremium = parseFloat(document.getElementById('annualPremium').value) || 0;
-            const payYears = parseInt(document.getElementById('payYears').value) || 0;
+        /** Core projection engine — reusable for scenario / sensitivity / 方案 B */
+        function simulate(irrFraction, overrides) {
+            overrides = overrides || {};
+            const entryAge = overrides.entryAge !== undefined
+                ? overrides.entryAge
+                : (parseInt(document.getElementById('entryAge').value) || 0);
+            const annualPremium = overrides.annualPremium !== undefined
+                ? overrides.annualPremium
+                : (parseFloat(document.getElementById('annualPremium').value) || 0);
+            const payYears = overrides.payYears !== undefined
+                ? overrides.payYears
+                : (parseInt(document.getElementById('payYears').value) || 0);
+            const wds = overrides.withdrawals || withdrawals;
 
             const totalPaid = annualPremium * payYears;
             let cashValue = 0;
@@ -667,7 +875,7 @@
                 const deposit = t <= payYears ? annualPremium : 0;
                 let withdrawal = 0;
 
-                withdrawals.forEach(w => {
+                wds.forEach(w => {
                     if (age >= w.startAge && age <= w.endAge) withdrawal += w.amount;
                 });
 
@@ -836,25 +1044,32 @@
             });
         }
 
-        function updateAggressiveBanner(out, irrFraction) {
+        function aggressiveScenarioMessage(out, irrFraction) {
+            if (out.depleted) {
+                return '本情景曾出現「提取大於可動用價值」之年度（演示上歸零處理），不可解讀為可長期全額提取，僅供內部壓力測試。';
+            }
+            if (out.multiple > 60) {
+                return '回報倍數極高，明顯屬過度樂觀假設；對外請配套保守情景及計劃書非保證說明。';
+            }
+            if (out.multiple > 38 && irrFraction > 0.065) {
+                return '演示倍數與年化回報同時偏高，易產生誤解，建議口頭強調「非保證」並保留公司文件為準。';
+            }
+            if (irrFraction > 0.075 && out.totalWithdraw > out.totalPaid * 3) {
+                return '高回報假設疊加大量提取，簡化模型或過於進取；客戶面談請審慎。';
+            }
+            return '';
+        }
+
+        function updateAggressiveBannerDual(outA, irrA, outB, irrB) {
             const box = document.getElementById('aggressiveScenarioBanner');
             const txt = document.getElementById('aggressiveScenarioText');
-            let msg = '';
-            let show = false;
-            if (out.depleted) {
-                show = true;
-                msg = '本情景曾出現「提取大於可動用價值」之年度（演示上歸零處理），不可解讀為可長期全額提取，僅供內部壓力測試。';
-            } else if (out.multiple > 60) {
-                show = true;
-                msg = '回報倍數極高，明顯屬過度樂觀假設；對外請配套保守情景及計劃書非保證說明。';
-            } else if (out.multiple > 38 && irrFraction > 0.065) {
-                show = true;
-                msg = '演示倍數與年化回報同時偏高，易產生誤解，建議口頭強調「非保證」並保留公司文件為準。';
-            } else if (irrFraction > 0.075 && out.totalWithdraw > out.totalPaid * 3) {
-                show = true;
-                msg = '高回報假設疊加大量提取，簡化模型或過於進取；客戶面談請審慎。';
+            const mA = aggressiveScenarioMessage(outA, irrA);
+            let msg = mA;
+            if (compareMode && outB) {
+                const mB = aggressiveScenarioMessage(outB, irrB);
+                if (mB) msg = mA ? (mA + '（方案B：' + mB + '）') : ('方案B：' + mB);
             }
-            if (show) {
+            if (msg) {
                 box.classList.remove('hidden');
                 txt.textContent = msg;
             } else {
@@ -872,7 +1087,12 @@
                 i: parseFloat(document.getElementById('irr').value) || 0,
                 f: parseFloat(document.getElementById('fxRate').value) || 7.8,
                 c: displayCurrency,
-                w: withdrawals.map(w => ({ a: w.startAge, b: w.endAge, m: w.amount, l: w.label }))
+                w: withdrawals.map(w => ({ a: w.startAge, b: w.endAge, m: w.amount, l: w.label })),
+                cmp: compareMode ? 1 : 0,
+                eb: parseInt(document.getElementById('entryAgeB').value) || 0,
+                yb: parseInt(document.getElementById('payYearsB').value) || 0,
+                pb: parseFloat(document.getElementById('annualPremiumB').value) || 0,
+                ib: parseFloat(document.getElementById('irrB').value) || 0
             };
         }
 
@@ -923,6 +1143,20 @@
                 ];
             }
             renderWithdrawalInputs();
+
+            const eb = s.eb !== undefined ? s.eb : s.e;
+            const yb = s.yb !== undefined ? s.yb : s.y;
+            const pb = s.pb !== undefined ? s.pb : s.p;
+            const ib = s.ib !== undefined ? s.ib : s.i;
+            document.getElementById('entryAgeB').value = eb;
+            document.getElementById('payYearsB').value = yb;
+            document.getElementById('annualPremiumB').value = pb;
+            document.getElementById('irrB').value = ib;
+            document.getElementById('irrValueB').innerText = parseFloat(ib).toFixed(1) + '%';
+
+            const wantCompare = s.cmp === 1 || s.cmp === true;
+            comparePrimed = wantCompare;
+            setCompareMode(wantCompare, { fromHash: true, skipCalculate: true });
             calculate();
         }
 
@@ -1004,20 +1238,72 @@
             }
         }
 
-        function calculate() {
-            const irr = (parseFloat(document.getElementById('irr').value) || 0) / 100;
-            const out = simulate(irr);
-            updateAggressiveBanner(out, irr);
+        function buildAlignedCompareSeries(outA, outB) {
+            const minAge = Math.min(outA.entryAge, outB.entryAge);
+            const labels = [];
+            for (let age = minAge; age <= 100; age++) labels.push(age);
 
-            document.getElementById('statTotalPaid').innerText = formatCurrencyUsd(out.totalPaid);
-            document.getElementById('statTotalWithdraw').innerText = formatCurrencyUsd(out.totalWithdraw);
-            document.getElementById('statFinalValue').innerText = formatCurrencyUsd(out.finalValue);
-            document.getElementById('statMultiple').innerText = out.multiple.toFixed(2) + '倍';
-            document.getElementById('statBreakeven').innerText = out.breakEvenAge != null ? `${out.breakEvenAge} 歲` : '演示內未達標';
-            document.getElementById('statNetWealth').innerText = formatCurrencyUsd(out.netWealth);
+            function pick(out, key, age) {
+                const i = out.labels.indexOf(age);
+                if (i === -1) return 0;
+                return out[key][i];
+            }
+
+            return {
+                labels,
+                withdrawalBars: labels.map(age => pick(outA, 'dataWithdrawals', age)),
+                cashA: labels.map(age => pick(outA, 'dataCashValue', age)),
+                cashB: labels.map(age => pick(outB, 'dataCashValue', age)),
+                cumPremA: labels.map(age => pick(outA, 'dataCumulativePremium', age)),
+                cumPremB: labels.map(age => pick(outB, 'dataCumulativePremium', age))
+            };
+        }
+
+        function buildCompareDeltaText(outA, outB) {
+            const dFinal = outB.finalValue - outA.finalValue;
+            const dNet = outB.netWealth - outA.netWealth;
+            const rel = outA.finalValue !== 0 ? (dFinal / outA.finalValue) * 100 : 0;
+            const hiLo = dFinal >= 0 ? '多' : '少';
+            const netHiLo = dNet >= 0 ? '多' : '少';
+            return `100歲帳戶 B 較 A ${hiLo}${formatCurrencyUsd(Math.abs(dFinal))}（相對 A 期末約 ${rel >= 0 ? '+' : ''}${rel.toFixed(1)}%）。回報倍數 A ${outA.multiple.toFixed(2)} 倍、B ${outB.multiple.toFixed(2)} 倍；淨財富（演示）B 較 A ${netHiLo}${formatCurrencyUsd(Math.abs(dNet))}。`;
+        }
+
+        function calculate() {
+            const irrA = (parseFloat(document.getElementById('irr').value) || 0) / 100;
+            const outA = simulate(irrA);
+            let outB = null;
+            let irrB = 0;
+            if (compareMode) {
+                irrB = (parseFloat(document.getElementById('irrB').value) || 0) / 100;
+                outB = simulate(irrB, {
+                    entryAge: parseInt(document.getElementById('entryAgeB').value) || 0,
+                    payYears: parseInt(document.getElementById('payYearsB').value) || 0,
+                    annualPremium: parseFloat(document.getElementById('annualPremiumB').value) || 0
+                });
+            }
+
+            updateAggressiveBannerDual(outA, irrA, outB, irrB);
+
+            document.getElementById('statTotalPaid').innerText = formatCurrencyUsd(outA.totalPaid);
+            document.getElementById('statTotalWithdraw').innerText = formatCurrencyUsd(outA.totalWithdraw);
+            document.getElementById('statFinalValue').innerText = formatCurrencyUsd(outA.finalValue);
+            document.getElementById('statMultiple').innerText = outA.multiple.toFixed(2) + '倍';
+            document.getElementById('statBreakeven').innerText = outA.breakEvenAge != null ? `${outA.breakEvenAge} 歲` : '演示內未達標';
+            document.getElementById('statNetWealth').innerText = formatCurrencyUsd(outA.netWealth);
+
+            if (compareMode && outB) {
+                document.getElementById('statBTotalPaid').innerText = formatCurrencyUsd(outB.totalPaid);
+                document.getElementById('statBFinalValue').innerText = formatCurrencyUsd(outB.finalValue);
+                document.getElementById('statBMultiple').innerText = outB.multiple.toFixed(2) + '倍';
+                document.getElementById('statBNetWealth').innerText = formatCurrencyUsd(outB.netWealth);
+                document.getElementById('compareDeltaText').textContent = buildCompareDeltaText(outA, outB);
+            } else {
+                const dtx = document.getElementById('compareDeltaText');
+                if (dtx) dtx.textContent = '—';
+            }
 
             const tbody = document.getElementById('resultTableBody');
-            tbody.innerHTML = out.tableRows.map(row => `
+            tbody.innerHTML = outA.tableRows.map(row => `
                 <tr class="border-b transition-colors ${row.warn ? 'row-warning' : 'hover:bg-slate-50'}">
                     <td class="px-6 py-4 text-slate-400 font-bold">${row.t}</td>
                     <td class="px-6 py-4 font-black text-slate-700">${row.age}</td>
@@ -1028,65 +1314,127 @@
                 </tr>
             `).join('');
 
-            updateMainChart(out.labels, out.dataCashValue, out.dataWithdrawals, out.dataCumulativePremium);
-            updateDonut(out.totalWithdraw, out.finalValue);
-            updateSensitivityChart(irr);
-            renderScenarioStrip(irr);
-            renderLifeTimeline(out.entryAge);
+            const sub = document.getElementById('mainChartSubline');
+            if (sub) {
+                sub.textContent = compareMode
+                    ? '雙方案帳戶結餘對照；年度提取沿用方案 A 時間軸（與左欄共用提取策略）；灰／紫虛線為累計保費。'
+                    : '帳戶結餘、年度提取、累計已繳保費（階梯線）';
+            }
+
+            if (compareMode && outB) {
+                const al = buildAlignedCompareSeries(outA, outB);
+                updateMainChart({
+                    compare: true,
+                    labels: al.labels,
+                    withdrawalBars: al.withdrawalBars,
+                    cashA: al.cashA,
+                    cashB: al.cashB,
+                    cumPremA: al.cumPremA,
+                    cumPremB: al.cumPremB
+                });
+            } else {
+                updateMainChart({
+                    compare: false,
+                    labels: outA.labels,
+                    withdrawalBars: outA.dataWithdrawals,
+                    cashA: outA.dataCashValue,
+                    cumPremA: outA.dataCumulativePremium
+                });
+            }
+
+            updateDonut(outA.totalWithdraw, outA.finalValue);
+            updateSensitivityChart(irrA);
+            renderScenarioStrip(irrA);
+            renderLifeTimeline(outA.entryAge);
         }
 
-        function updateMainChart(labels, cashValues, withdrawalsArr, cumulativePremium) {
+        function updateMainChart(cfg) {
             const ctx = document.getElementById('mainChart').getContext('2d');
             if (chart) chart.destroy();
 
             const gradient = ctx.createLinearGradient(0, 0, 0, 400);
             gradient.addColorStop(0, 'rgba(37, 99, 235, 0.2)');
             gradient.addColorStop(1, 'rgba(37, 99, 235, 0)');
+            const gradientB = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientB.addColorStop(0, 'rgba(79, 70, 229, 0.2)');
+            gradientB.addColorStop(1, 'rgba(79, 70, 229, 0)');
 
-            const cv = cashValues.map(v => usdToDisplay(v));
-            const wd = withdrawalsArr.map(v => usdToDisplay(v));
-            const cp = cumulativePremium.map(v => usdToDisplay(v));
+            const labels = cfg.labels;
+            const wd = cfg.withdrawalBars.map(v => usdToDisplay(v));
+            const cvA = cfg.cashA.map(v => usdToDisplay(v));
+            const cpA = cfg.cumPremA.map(v => usdToDisplay(v));
+
+            const datasets = [
+                {
+                    type: 'bar',
+                    label: cfg.compare ? '年度提取（共用）' : '年度提取',
+                    data: wd,
+                    backgroundColor: '#f43f5e',
+                    barThickness: cfg.compare ? 5 : 7,
+                    borderRadius: 4,
+                    order: 6
+                },
+                {
+                    type: 'line',
+                    label: cfg.compare ? '帳戶價值（A）' : '帳戶價值',
+                    data: cvA,
+                    borderColor: '#2563eb',
+                    borderWidth: 3,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    order: 1
+                }
+            ];
+
+            if (cfg.compare && cfg.cashB) {
+                datasets.push({
+                    type: 'line',
+                    label: '帳戶價值（B）',
+                    data: cfg.cashB.map(v => usdToDisplay(v)),
+                    borderColor: '#4f46e5',
+                    borderWidth: 3,
+                    backgroundColor: gradientB,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    order: 2
+                });
+            }
+
+            datasets.push({
+                type: 'line',
+                label: cfg.compare ? '累計保費（A）' : '累計已繳保費',
+                data: cpA,
+                borderColor: '#64748b',
+                borderWidth: 2,
+                borderDash: [6, 4],
+                fill: false,
+                tension: 0,
+                pointRadius: 0,
+                order: 3
+            });
+
+            if (cfg.compare && cfg.cumPremB) {
+                datasets.push({
+                    type: 'line',
+                    label: '累計保費（B）',
+                    data: cfg.cumPremB.map(v => usdToDisplay(v)),
+                    borderColor: '#818cf8',
+                    borderWidth: 2,
+                    borderDash: [2, 5],
+                    fill: false,
+                    tension: 0,
+                    pointRadius: 0,
+                    order: 4
+                });
+            }
 
             chart = new Chart(ctx, {
-                data: {
-                    labels,
-                    datasets: [
-                        {
-                            type: 'bar',
-                            label: '年度提取',
-                            data: wd,
-                            backgroundColor: '#f43f5e',
-                            barThickness: 7,
-                            borderRadius: 4,
-                            order: 3
-                        },
-                        {
-                            type: 'line',
-                            label: '帳戶價值',
-                            data: cv,
-                            borderColor: '#2563eb',
-                            borderWidth: 3,
-                            backgroundColor: gradient,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 6,
-                            order: 1
-                        },
-                        {
-                            type: 'line',
-                            label: '累計已繳保費',
-                            data: cp,
-                            borderColor: '#64748b',
-                            borderWidth: 2,
-                            borderDash: [6, 4],
-                            fill: false,
-                            tension: 0,
-                            pointRadius: 0,
-                            order: 2
-                        }
-                    ]
-                },
+                data: { labels, datasets },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -1140,12 +1488,43 @@
             window.addEventListener('beforeprint', () => {
                 const el = document.getElementById('printTimestamp');
                 if (el) el.textContent = new Date().toLocaleString('zh-HK');
+                const irrA = (parseFloat(document.getElementById('irr').value) || 0) / 100;
+                const oa = simulate(irrA);
+                const meta = document.getElementById('printSummaryMeta');
+                if (meta) {
+                    meta.textContent = (compareMode ? 'A／B 對照 · ' : '') + '演示年化 A ' + (irrA * 100).toFixed(1) + '%' + (compareMode ? ' · B ' + ((parseFloat(document.getElementById('irrB').value) || 0).toFixed(1)) + '%' : '') + ' · ' + (displayCurrency === 'HKD' ? '港幣顯示' : '美金顯示');
+                }
+                const setTxt = (id, t) => { const n = document.getElementById(id); if (n) n.textContent = t; };
+                setTxt('printStatPaid', formatCurrencyUsd(oa.totalPaid));
+                setTxt('printStatWithdraw', formatCurrencyUsd(oa.totalWithdraw));
+                setTxt('printStatFinal', formatCurrencyUsd(oa.finalValue));
+                setTxt('printStatMultiple', oa.multiple.toFixed(2) + '倍');
+                const pcl = document.getElementById('printCompareLine');
+                if (pcl) {
+                    if (compareMode) {
+                        const irrB = (parseFloat(document.getElementById('irrB').value) || 0) / 100;
+                        const ob = simulate(irrB, {
+                            entryAge: parseInt(document.getElementById('entryAgeB').value) || 0,
+                            payYears: parseInt(document.getElementById('payYearsB').value) || 0,
+                            annualPremium: parseFloat(document.getElementById('annualPremiumB').value) || 0
+                        });
+                        pcl.textContent = '方案B · 總保費 ' + formatCurrencyUsd(ob.totalPaid) + ' · 100歲 ' + formatCurrencyUsd(ob.finalValue) + ' · 倍數 ' + ob.multiple.toFixed(2) + '倍';
+                    } else {
+                        pcl.textContent = '';
+                    }
+                }
             });
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js').catch(() => {});
             }
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') closeContactPanel();
+                if (e.key === 'Escape') {
+                    if (document.body.classList.contains('presentation-mode')) {
+                        exitPresentation();
+                        return;
+                    }
+                    closeContactPanel();
+                }
             });
         };
     </script>
